@@ -12,32 +12,28 @@ idRol int not null IDENTITY(1,1),
 rol varchar(20) not null,
 primary key(idRol));
 
-INSERT INTO rol(rol) VALUES('administrador');
+INSERT INTO rol(rol) VALUES('RRHH');
+INSERT INTO rol(rol) VALUES('jefe');
+INSERT INTO rol(rol) VALUES('empleado');
+INSERT INTO rol(rol) VALUES('Seguridad');
 
 
-IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[estadousuario]') AND type in (N'U'))
-DROP TABLE [dbo].[estadousuario]
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[estado]') AND type in (N'U'))
+DROP TABLE [dbo].[estado]
 
-create table estadousuario(
+create table estado(
 idEstado int not null IDENTITY(1,1),
 estado varchar(12) not null,
 primary key(idEstado));
 
-INSERT INTO estadousuario(estado) VALUES('Activo');
-INSERT INTO estadousuario(estado) VALUES('Inactivo');
-
-IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[estadosolicitudes]') AND type in (N'U'))
-DROP TABLE [dbo].[estadosolicitudes]
-
-create table estadosolicitudes(
-idEstado int not null IDENTITY(1,1),
-estado varchar(12) not null,
-primary key(idEstado));
-
-INSERT INTO estadosolicitudes(estado) VALUES('Aprobado');
-INSERT INTO estadosolicitudes(estado) VALUES('Rechazado');
-INSERT INTO estadosolicitudes(estado) VALUES('Pendiente');
-INSERT INTO estadosolicitudes(estado) VALUES('Finalizado');
+INSERT INTO estado(estado) VALUES('Activo');
+INSERT INTO estado(estado) VALUES('Inactivo');
+INSERT INTO estado(estado) VALUES('Aprobado');
+INSERT INTO estado(estado) VALUES('Rechazado');
+INSERT INTO estado(estado) VALUES('Pendiente');
+INSERT INTO estado(estado) VALUES('En Progreso');
+INSERT INTO estado(estado) VALUES('Finalizado');
+INSERT INTO estado(estado) VALUES('Cancelado');
 
 IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[areas]') AND type in (N'U'))
 DROP TABLE [dbo].[areas]
@@ -45,29 +41,26 @@ DROP TABLE [dbo].[areas]
 create table areas(
 idArea int not null IDENTITY(1,1),
 descripcion varchar(20) not null,
-capacidad int not null,
-primary key(idArea));
+idEstado int not null,
+primary key(idArea),
+foreign key(idEstado) references estado(idEstado));
 
 IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[usuario]') AND type in (N'U'))
 DROP TABLE [dbo].[usuario]
 
 create table usuario(
  idUsuario int not Null  IDENTITY(1,1),
- nombreCompleto varchar(30) not null,
- carnet varchar(30) not null,
+ usuario varchar(30) not null,
  correo varchar(30) not null,
  pass varchar(50) not null,
- idRol int not null,
- idEstado int not null,
+ idRol int not null
  primary key(idUsuario),
- foreign key(idRol) references rol(idRol),
- foreign key(idEstado) references estadousuario(idEstado));
+ foreign key(idRol) references rol(idRol));
 
- Insert into usuario(nombreCompleto, carnet, correo, pass, idRol, idEstado)
- values ('admin', '2534322013', '2534322013@gmail.com',  '123456', '1', '1');
+ Insert into usuario(usuario, correo, pass, idRol)
+ values ('admin', '2534322013@gmail.com',  '123456', '1');
 
-
-IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[tipov]') AND type in (N'U'))
+ IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[tipov]') AND type in (N'U'))
 DROP TABLE [dbo].[tipov]
 
 create table tipov(
@@ -75,35 +68,49 @@ idTipo int not null IDENTITY(1,1),
 tipo varchar(20) not null
 primary key(idTipo));
 
-IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[entidad]') AND type in (N'U'))
-DROP TABLE [dbo].[entidad]
+INSERT INTO tipov(tipo) VALUES('Interno');
+INSERT INTO tipov(tipo) VALUES('Cliente');
+INSERT INTO tipov(tipo) VALUES('Proveedor');
+INSERT INTO tipov(tipo) VALUES('Particular');
 
-create table entidad(
-idEntidad int not null IDENTITY(1,1),
-entidad varchar(20) not null,
-primary key(idEntidad));
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[empresa]') AND type in (N'U'))
+DROP TABLE [dbo].[empresa]
 
-IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[visitante]') AND type in (N'U'))
-DROP TABLE [dbo].[visitante]
-
-create table visitante(
-idVisitante int not null IDENTITY(1,1),
-idEntidad int not null,
-idTipoVi int not null,
-nombreVisitante varchar(30) not null,
+create table empresa(
+idEmpresa int not null IDENTITY(1,1),
+nombre varchar(50) not null,
+idTipo int not null,
 idEstado int not null,
-primary key(idVisitante),
-foreign key(idEntidad) references entidad(idEntidad),
-foreign key(idTipoVi) references tipov(idTipo),
-foreign key(idEstado) references estadousuario(idEstado));
+primary key(idEmpresa),
+foreign key(idTipo) references tipov(idTipo),
+foreign Key(idEstado) references estado(idEstado));
 
+INSERT INTO empresa(nombre, idTipo, idEstado) VALUES('Empresa S.A de C.V', 1, 1);
+
+ IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[personas]') AND type in (N'U'))
+DROP TABLE [dbo].[personas]
+
+create table personas(
+idPersona int not null IDENTITY(1,1),
+nombreCompleto varchar(60) not null,
+docIdentidad varchar(20) not null,
+idEmpresa int not null,
+idEmpleado int,
+idEstado int not null,
+fechayHoraCreacion datetime not null,
+primary key(idPersona),
+foreign key(idEmpresa) references empresa(idEmpresa),
+foreign key(idEmpleado) references usuario(idUsuario),
+foreign key(idEstado) references estado(idEstado));
+
+INSERT INTO personas(nombreCompleto, docIdentidad, idEmpresa, idEmpleado, idEstado, fechayHoraCreacion) VALUES('administrador 1', '0616041291-1', 1, 1, 1, SYSDATETIMEOffset());
 
 IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[preguntas]') AND type in (N'U'))
 DROP TABLE [dbo].[preguntas]
 
 create table preguntas(
 idPregunta int not null IDENTITY(1,1),
-descripcion varchar(100) not null
+descripcion text not null
 primary key(idPregunta));
 
 IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[formulario]') AND type in (N'U'))
@@ -123,16 +130,14 @@ create table solicitud (
 idSolicitud int not null IDENTITY(1,1),
 idUsuario int not null,
 fechaCreacion datetime not null,
-fechaVisita date not null,
-horaVisita time not null,
+fechayHoraVisita DATETIME not null,
 motivo text not null,
 idEstado int not null,
 idArea int not null,
-idFormulario int not null,
 primary key(idSolicitud),
-foreign key(idEstado) references estadosolicitudes(idEstado),
+foreign key(idEstado) references estado(idEstado),
 foreign key(idArea) references areas(idArea),
-foreign key(idFormulario) references formulario(idFormulario));
+foreign key(idUsuario) references usuario(idUsuario));
 
 IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[detallesolicitud]') AND type in (N'U'))
 DROP TABLE [dbo].[detallesolicitud]
@@ -140,12 +145,12 @@ DROP TABLE [dbo].[detallesolicitud]
 create table detallesolicitud(
 idDetalle int not null IDENTITY(1,1),
 idSolicituDe int not null,
-idEmpleado int not null,
-idVisitanteDe int not null,
+idVisitante int not null,
+idFormulario int not null,
 primary key(idDetalle),
 foreign key(idSolicituDe) references solicitud(idSolicitud),
-foreign key(idEmpleado) references Usuario(idUsuario),
-foreign key(idVisitanteDe) references visitante(idVisitante));
+foreign key(idVisitante) references personas(idPersona),
+foreign key(idFormulario) references formulario(idFormulario));
 
 IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[detalleingreso]') AND type in (N'U'))
 DROP TABLE [dbo].[detalleingreso]
@@ -156,61 +161,90 @@ fechaHoraIngreso datetime not null,
 fechaHoraSalida datetime not null,
 temperatura decimal(3,2) not null,
 idDetalle int not null,
-idEstado int not null,
 primary key(idIngreso),
-foreign key(idDetalle) references detallesolicitud(idDetalle),
-foreign key(idEstado) references estadosolicitudes(idEstado));
+foreign key(idDetalle) references detallesolicitud(idDetalle));
+
+GO;
+
+------------Store Procedures ------------
+
+---validar login -----
+GO
+CREATE PROCEDURE UserLogin
+@corr varchar,
+@pass varchar
+AS
+BEGIN
+	SELECT idUsuario, correo, pass, idRol, nombreCompleto FROM usuario 
+	INNER JOIN personas ON personas.idEmpleado = usuario.idUsuario
+	WHERE correo = @corr AND pass = @pass;
+END
+GO;
+
+---validar campos usuario-----
+GO
+CREATE PROCEDURE ValidationUser
+@action char(1),
+@var varchar
+AS
+	IF(@action = 'D')
+	BEGIN
+		SELECT count(idPersona) AS var FROM personas WHERE docIdentidad LIKE @var;
+	END
+	IF(@action = 'C')
+	BEGIN
+		SELECT count(correo) AS var FROM usuario WHERE correo LIKE @var;
+	END
+	IF(@action = 'F')
+	BEGIN
+		SELECT fechayHoraCreacion AS fecha FROM personas WHERE idPersona = @var;
+END
+GO;
+
 
 --store procedure: states ---
 GO
 CREATE PROCEDURE CrupState
-	@id int,
-	@action char(2)
+@id int,
+@action char(2)
 AS
-IF(@action = 'LU')
-BEGIN
-	SELECT * FROM estadousuario;
-END
-IF(@action = 'BU')
-BEGIN
-	SELECT * FROM estadousuario WHERE idEstado = @id;
-END
-IF(@action = 'LS')
-BEGIN
-	SELECT * FROM estadosolicitudes;
-END
-IF(@action = 'BS')
-BEGIN
-	SELECT * FROM estadosolicitudes WHERE idEstado = @id;
-END;
+	IF(@action = 'L')
+	BEGIN
+		SELECT * FROM estado;
+	END
+	IF(@action = 'B')
+	BEGIN
+		SELECT * FROM estado WHERE idEstado = @id;
+	END
+GO;
+
 
 --store procedure: rol ---
  GO
 CREATE PROCEDURE CrupRol
-	@id int,
-	@action char(1),
-	@var varchar(20)
+@id int,
+@action char(1),
+@var varchar(20)
 AS
-IF(@action = 'L')
-BEGIN
-	SELECT * FROM rol;
-END
-IF(@action = 'B')
-BEGIN
-	SELECT * FROM rol WHERE idRol = @id;
-END
-IF(@action = 'I')
-BEGIN
-	INSERT INTO rol(rol) VALUES(@var);
-END
-IF(@action = 'U')
-BEGIN
-	UPDATE rol SET rol = @var WHERE idRol = @id;
-END
-IF(@action = 'D')
-BEGIN
-	DELETE rol WHERE idRol = @id;
-END;
+	IF(@action = 'L')
+	BEGIN
+		SELECT * FROM rol;
+	END
+	IF(@action = 'B')
+	BEGIN
+		SELECT * FROM rol WHERE idRol = @id;
+	END
+	IF(@action = 'I')
+	BEGIN
+		INSERT INTO rol(rol) VALUES(@var);
+	END
+	IF(@action = 'U')
+	BEGIN
+		UPDATE rol SET rol = @var WHERE idRol = @id;
+	END
+
+GO;
+
 
 ---store procedure: areas ----
 GO
@@ -218,7 +252,7 @@ CREATE PROCEDURE CrupAreas
 	@id int,
 	@action char(1),
 	@des varchar(20),
-	@capa int
+	@est int
 AS
 IF(@action = 'L')
 BEGIN
@@ -230,28 +264,184 @@ BEGIN
 END
 IF(@action = 'I')
 BEGIN
-	INSERT INTO areas(descripcion, capacidad) VALUES(@des, @capa);
+	INSERT INTO areas(descripcion, idEstado) VALUES(@des, @est);
 END
 IF(@action = 'U')
 BEGIN
-	UPDATE areas SET descripcion = @des, capacidad = @capa WHERE idArea = @id;
+	UPDATE areas SET descripcion = @des, idEstado = @est WHERE idArea = @id;
 END
 IF(@action = 'D')
 BEGIN
 	DELETE areas WHERE idArea = @id;
 END;
+GO;
+
+
+---store procedure: entidades ----
+GO
+CREATE PROCEDURE CrupEmpresa
+@id int,
+@action char(1),
+@var varchar(50),
+@tip int,
+@es int
+AS
+	IF(@action = 'I')
+	BEGIN
+		INSERT INTO empresa(nombre, idTipo, idEstado) VALUES(@var,@tip,@es);
+		SELECT @@IDENTITY as ID;
+	END
+	IF(@action = 'U')
+	BEGIN
+		UPDATE empresa SET nombre = @var, idTipo = @tip, idEstado = @es WHERE idEmpresa = @id;
+		IF(@es = 2)
+		BEGIN
+			UPDATE personas SET personas.idEstado = @es WHERE personas.idEmpresa=@id;
+		END
+	END
+GO;
+
+
+---store procedure: tipo-empresa ----
+GO
+CREATE PROCEDURE CrupTipEmp
+@id int,
+@action char(1)
+AS
+	IF(@action = 'L')
+	BEGIN
+		SELECT * FROM tipov;
+	END
+	IF(@action = 'B')
+	BEGIN
+		SELECT * FROM tipov WHERE idTipo = @id;
+	END
+GO;
+
+
+--- Store procedures: preguntas ----
+GO
+CREATE PROCEDURE CrupPregunta
+@id int,
+@action char(1),
+@var text
+AS
+	IF(@action = 'L')
+	BEGIN
+		SELECT * FROM preguntas;
+	END
+	IF(@action = 'B')
+	BEGIN
+		SELECT * FROM preguntas WHERE idPregunta = @id;
+	END
+	IF(@action = 'I')
+	BEGIN
+		INSERT INTO preguntas(descripcion) VALUES(@var);
+	END
+	IF(@action = 'U')
+	BEGIN
+		UPDATE preguntas SET descripcion = @var WHERE idPregunta = @id;
+	END
+	IF(@action = 'D')
+	BEGIN
+		DELETE preguntas WHERE idPregunta = @id;
+	END
+GO;
+
 
 --- store procedure: users ----
 GO
-CREATE PROCEDURE CrupUsers
-	@id int,
-	@action char(1)
+CREATE PROCEDURE IUUsers
+@id int,
+@action char(1),
+@user varchar,
+@corr varchar,
+@pass varchar,
+@rol int
 AS
-IF(@action = 'L')
-BEGIN
-	SELECT * FROM usuario;
-END
-IF(@action = 'B')
-BEGIN
-	SELECT * FROM usuario WHERE idUsuario = @id;
-END;
+	IF(@action = 'I')
+	BEGIN
+		-----Insertar usuario ----
+		INSERT INTO usuario(usuario, correo, pass, idRol) VALUES(@user, @corr, @pass, @rol);
+		SELECT @@IDENTITY as ID;
+	END
+	IF(@action = 'U')
+	BEGIN
+		---Actualizar Usuario ---
+		UPDATE usuario SET usuario = @user, correo = @corr, pass = @pass, idRol = @rol WHERE idUsuario = @id;
+	END
+GO;
+
+GO
+CREATE PROCEDURE IUPersons
+@action char(1),
+@nom varchar,
+@doc varchar,
+@fecha datetime,
+@emp int,
+@user int,
+@est int,
+@id int
+AS
+	IF(@action = 'I')
+	BEGIN
+		----insertar personas ---
+		INSERT INTO personas(nombreCompleto, docIdentidad, idEmpresa, idEmpleado, idEstado, fechayHoraCreacion) 
+		VALUES( @nom, @doc, @emp, @user, @est, SYSDATETIMEOffset());
+		SELECT @@IDENTITY as ID;
+	END
+	IF(@action = 'U')
+	BEGIN
+		--Actualizar Personas ---
+		UPDATE personas SET nombreCompleto = @nom, docIdentidad = @doc, idEmpresa = @emp,
+		idEmpleado = @user, idEstado = @est, fechayHoraCreacion = @fecha WHERE idPersona = @id;
+	END
+GO;
+
+GO
+CREATE PROCEDURE searchEP
+@action char(1),
+@var varchar
+AS
+	IF(@action = 'P')
+	BEGIN
+		--Buscar Personas ---
+		SELECT idPersona, nombreCompleto, docIdentidad FROM personas WHERE idEstado = 1 AND nombreCompleto LIKE @var;
+	END
+	IF(@action = 'E')
+	BEGIN
+		--buscar empresas---
+		SELECT nombre, empresa.idTipo, tipo FROM empresa INNER JOIN tipov ON empresa.idTipo = tipov.idTipo
+		WHERE idEstado = 1 AND nombre LIKE @var;
+	END
+GO;
+
+CREATE PROCEDURE listEEP
+@action char(3),
+@id int
+AS
+	IF(@action = 'LB')
+	BEGIN
+		---listar empresas
+		SELECT idEmpresa, nombre, empresa.idTipo, tipo, idEstado FROM empresa
+		INNER JOIN tipov ON empresa.idTipo = tipov.idTipo;
+	END
+	IF(@action = 'LP')
+	BEGIN
+		---listar personas---
+		SELECT idPersona, nombreCompleto, docIdentidad, nombre, estado FROM personas INNER JOIN empresa
+		ON personas.idEmpresa = empresa.idEmpresa INNER JOIN estado ON estado.idEstado = personas.idEstado
+	END
+	IF(@action = 'BP')
+	BEGIN
+		--Buscar Personas ---
+		SELECT idPersona, nombreCompleto, docIdentidad, idEmpresa , idEstado FROM personas WHERE idPersona = @id;
+	END
+	IF(@action = 'BE')
+	BEGIN
+		----Buscar empleado ---
+		SELECT idPersona, idUsuario, usuario, nombreCompleto, docIdentidad, correo, idRol, pass, idEstado, idEmpresa
+		FROM personas INNER JOIN usuario ON personas.idPersona = usuario.idUsuario
+		WHERE idPersona = @id;
+	END
+GO;
