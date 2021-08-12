@@ -1,5 +1,5 @@
 
 export const querys = {
 
-    crupUsers: 'EXEC CrupUsers @id, @A',
+    listEEPS: 'EXEC listEEPS @A, @id',
 };

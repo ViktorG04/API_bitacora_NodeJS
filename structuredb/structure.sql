@@ -1,7 +1,3 @@
-drop database if exists bitacora;
-
-create database bitacora;
-
 use bitacora;
 
 IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[rol]') AND type in (N'U'))
@@ -52,7 +48,7 @@ create table usuario(
  idUsuario int not Null  IDENTITY(1,1),
  usuario varchar(30) not null,
  correo varchar(30) not null,
- pass varchar(50) not null,
+ pass varchar(12) not null,
  idRol int not null
  primary key(idUsuario),
  foreign key(idRol) references rol(idRol));
@@ -171,8 +167,8 @@ GO;
 ---validar login -----
 GO
 CREATE PROCEDURE UserLogin
-@corr varchar,
-@pass varchar
+@corr varchar(30),
+@pass varchar(12)
 AS
 BEGIN
 	SELECT idUsuario, correo, pass, idRol, nombreCompleto FROM usuario 
@@ -185,7 +181,7 @@ GO;
 GO
 CREATE PROCEDURE ValidationUser
 @action char(1),
-@var varchar
+@var varchar(8)
 AS
 	IF(@action = 'D')
 	BEGIN
@@ -206,7 +202,7 @@ GO;
 GO
 CREATE PROCEDURE CrupState
 @id int,
-@action char(2)
+@action char(1)
 AS
 	IF(@action = 'L')
 	BEGIN
@@ -279,9 +275,9 @@ GO;
 
 ---store procedure: entidades ----
 GO
-CREATE PROCEDURE CrupEmpresa
-@id int,
+CREATE PROCEDURE IUEmpresa
 @action char(1),
+@id int,
 @var varchar(50),
 @tip int,
 @es int
@@ -352,56 +348,63 @@ GO;
 --- store procedure: users ----
 GO
 CREATE PROCEDURE IUUsers
-@id int,
 @action char(1),
-@user varchar,
-@corr varchar,
-@pass varchar,
-@rol int
+@user varchar(30),
+@corr varchar(30),
+@pass varchar(12),
+@nom varchar(60),
+@doc varchar(20),
+@rol int,
+@emp int,
+@est int,
+@id int
 AS
 	IF(@action = 'I')
 	BEGIN
-		-----Insertar usuario ----
+		-----Insert user ----
 		INSERT INTO usuario(usuario, correo, pass, idRol) VALUES(@user, @corr, @pass, @rol);
-		SELECT @@IDENTITY as ID;
+
+		INSERT INTO personas(nombreCompleto, docIdentidad, idEmpresa, idEmpleado, idEstado, fechayHoraCreacion) 
+		VALUES( @nom, @doc, @emp, (SELECT @@IDENTITY as ID), @est, SYSDATETIMEOffset());
 	END
 	IF(@action = 'U')
 	BEGIN
-		---Actualizar Usuario ---
+		---Update table user---
 		UPDATE usuario SET usuario = @user, correo = @corr, pass = @pass, idRol = @rol WHERE idUsuario = @id;
+
+		---update table persons----
+		UPDATE personas SET nombreCompleto = @nom, docIdentidad = @doc, idEstado = @est WHERE idEmpleado = @id;
 	END
 GO;
 
 GO
 CREATE PROCEDURE IUPersons
 @action char(1),
-@nom varchar,
-@doc varchar,
-@fecha datetime,
+@nom varchar(60),
+@doc varchar(20),
 @emp int,
-@user int,
 @est int,
 @id int
 AS
 	IF(@action = 'I')
 	BEGIN
 		----insertar personas ---
-		INSERT INTO personas(nombreCompleto, docIdentidad, idEmpresa, idEmpleado, idEstado, fechayHoraCreacion) 
-		VALUES( @nom, @doc, @emp, @user, @est, SYSDATETIMEOffset());
+		INSERT INTO personas(nombreCompleto, docIdentidad, idEmpresa, idEstado, fechayHoraCreacion) 
+		VALUES( @nom, @doc, @emp, @est, SYSDATETIMEOffset());
 		SELECT @@IDENTITY as ID;
 	END
 	IF(@action = 'U')
 	BEGIN
 		--Actualizar Personas ---
 		UPDATE personas SET nombreCompleto = @nom, docIdentidad = @doc, idEmpresa = @emp,
-		idEmpleado = @user, idEstado = @est, fechayHoraCreacion = @fecha WHERE idPersona = @id;
+		 idEstado = @est WHERE idPersona = @id;
 	END
 GO;
 
 GO
 CREATE PROCEDURE searchEP
 @action char(1),
-@var varchar
+@var varchar(8)
 AS
 	IF(@action = 'P')
 	BEGIN
@@ -416,32 +419,40 @@ AS
 	END
 GO;
 
-CREATE PROCEDURE listEEP
+GO
+CREATE PROCEDURE listEEPS
 @action char(3),
 @id int
 AS
-	IF(@action = 'LB')
+	IF(@action = 'LTE')
 	BEGIN
-		---listar empresas
+		---list all companies
 		SELECT idEmpresa, nombre, empresa.idTipo, tipo, idEstado FROM empresa
 		INNER JOIN tipov ON empresa.idTipo = tipov.idTipo;
 	END
-	IF(@action = 'LP')
+	IF(@action = 'LTP')
 	BEGIN
-		---listar personas---
-		SELECT idPersona, nombreCompleto, docIdentidad, nombre, estado FROM personas INNER JOIN empresa
+		---list all people---
+		SELECT idPersona, nombreCompleto, docIdentidad, nombre AS empresa, estado FROM personas INNER JOIN empresa
 		ON personas.idEmpresa = empresa.idEmpresa INNER JOIN estado ON estado.idEstado = personas.idEstado
 	END
 	IF(@action = 'BP')
 	BEGIN
-		--Buscar Personas ---
-		SELECT idPersona, nombreCompleto, docIdentidad, idEmpresa , idEstado FROM personas WHERE idPersona = @id;
+		--search person ---
+		SELECT idPersona, nombreCompleto, docIdentidad, P.idEmpresa, E.nombre AS empresa, P.idEstado FROM personas AS P INNER JOIN
+		empresa AS E ON P.idEmpresa = E.idEmpresa WHERE idPersona = @id;
 	END
 	IF(@action = 'BE')
 	BEGIN
-		----Buscar empleado ---
+		----search employee ---
 		SELECT idPersona, idUsuario, usuario, nombreCompleto, docIdentidad, correo, idRol, pass, idEstado, idEmpresa
-		FROM personas INNER JOIN usuario ON personas.idPersona = usuario.idUsuario
+		FROM personas INNER JOIN usuario ON personas.idEmpleado = usuario.idUsuario
 		WHERE idPersona = @id;
 	END
-GO;
+	IF(@action = 'LPE')
+	BEGIN
+		---list people by company---
+		SELECT idPersona, nombreCompleto, docIdentidad, nombre, estado FROM personas INNER JOIN empresa
+		ON personas.idEmpresa = empresa.idEmpresa INNER JOIN estado ON estado.idEstado = personas.idEstado
+		WHERE personas.idEmpresa = @id;
+	END;

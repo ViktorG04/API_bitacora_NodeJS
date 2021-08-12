@@ -1,13 +1,10 @@
 import { Router } from 'express';
 
-import {getUsers,
+import {
     getUserById
-    } from '../controllers/users.controller';
+} from '../controllers/users.controller';
 
 const router = Router();
-
-//all
-router.get("/users", getUsers);
 
 //only one
 router.get("/users/:id", getUserById);
