@@ -181,28 +181,24 @@ GO;
 GO
 CREATE PROCEDURE ValidationUser
 @action char(1),
-@var varchar(8)
+@var varchar(30)
 AS
 	IF(@action = 'D')
 	BEGIN
-		SELECT count(idPersona) AS var FROM personas WHERE docIdentidad LIKE @var;
+		SELECT count(idPersona) AS V FROM personas WHERE docIdentidad LIKE @var;
 	END
 	IF(@action = 'C')
 	BEGIN
-		SELECT count(correo) AS var FROM usuario WHERE correo LIKE @var;
+		SELECT count(idUsuario) AS V FROM usuario WHERE correo LIKE @var;
 	END
-	IF(@action = 'F')
-	BEGIN
-		SELECT fechayHoraCreacion AS fecha FROM personas WHERE idPersona = @var;
-END
 GO;
 
 
 --store procedure: states ---
 GO
 CREATE PROCEDURE CrupState
-@id int,
-@action char(1)
+@action char(1),
+@id int
 AS
 	IF(@action = 'L')
 	BEGIN
@@ -218,8 +214,8 @@ GO;
 --store procedure: rol ---
  GO
 CREATE PROCEDURE CrupRol
-@id int,
 @action char(1),
+@id int,
 @var varchar(20)
 AS
 	IF(@action = 'L')
@@ -245,8 +241,8 @@ GO;
 ---store procedure: areas ----
 GO
 CREATE PROCEDURE CrupAreas
-	@id int,
 	@action char(1),
+	@id int,
 	@des varchar(20),
 	@est int
 AS
@@ -301,8 +297,8 @@ GO;
 ---store procedure: tipo-empresa ----
 GO
 CREATE PROCEDURE CrupTipEmp
-@id int,
-@action char(1)
+@action char(1),
+@id int
 AS
 	IF(@action = 'L')
 	BEGIN
