@@ -171,7 +171,7 @@ CREATE PROCEDURE UserLogin
 @pass varchar(12)
 AS
 BEGIN
-	SELECT idUsuario, correo, pass, idRol, nombreCompleto FROM usuario 
+	SELECT idUsuario, correo, pass, idRol, nombreCompleto, idEstado AS estado FROM usuario 
 	INNER JOIN personas ON personas.idEmpleado = usuario.idUsuario
 	WHERE correo = @corr AND pass = @pass;
 END

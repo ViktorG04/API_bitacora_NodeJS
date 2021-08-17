@@ -1,7 +1,7 @@
 import { Router } from 'express';
 
 import {
-    getPersons, getPersonById, getPersonsbyCompany
+    getPersons, getPersonById, getPersonsbyCompany, updatePersonById
 } from '../controllers/persons.controller';
 
 const router = Router();
@@ -14,5 +14,8 @@ router.get("/persons/company/:id", getPersonsbyCompany);
 
 //only one
 router.get("/persons/:id", getPersonById);
+
+//update penson
+router.put("/persons", updatePersonById);
 
 export default router;

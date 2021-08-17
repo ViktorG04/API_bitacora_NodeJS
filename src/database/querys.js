@@ -10,4 +10,6 @@ export const querys = {
     getTipEmp: 'EXEC CrupTipEmp @A, @id',
     validatePerson: 'EXEC ValidationUser @A, @var',
     getEmployee: 'EXEC IUUsers @A, @user, @co, @pas, @nom, @doc, @rol, @em, @est, @id',
+    getPersons: 'EXEC IUPersons @A, @nom, @doc, @emp, @est, @id',
+    getLogin: 'EXEC UserLogin @email, @pass',
 };
