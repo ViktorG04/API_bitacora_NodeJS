@@ -271,7 +271,7 @@ GO;
 
 ---store procedure: entidades ----
 GO
-CREATE PROCEDURE IUEmpresa
+CREATE PROCEDURE IUEntity
 @action char(1),
 @id int,
 @var varchar(50),
@@ -452,3 +452,94 @@ AS
 		ON personas.idEmpresa = empresa.idEmpresa INNER JOIN estado ON estado.idEstado = personas.idEstado
 		WHERE personas.idEmpresa = @id;
 	END;
+GO
+
+GO
+CREATE PROCEDURE listSolicitudes
+@action char(2),
+@id int
+AS
+	IF(@action = 'LS')
+	BEGIN
+		---list solicitudes---
+		SELECT S.idSolicitud, S.fechaYHoraVisita, S.idEstado, E.estado FROM solicitud AS S
+		INNER JOIN estado AS E ON S.idEstado = E.idEstado;
+	END
+	IF(@action = 'BS')
+	BEGIN
+		---search solicitud---
+		SELECT S.idSolicitud, U.usuario, S.fechayHoraVisita, EM.nombre AS empresa, S.motivo, A.descripcion,  S.idEstado, E.estado FROM solicitud 
+		AS S INNER JOIN estado AS E ON S.idEstado = E.idEstado
+		INNER JOIN areas AS A ON S.idArea = A.idArea
+		INNER JOIN usuario AS U ON U.idUsuario = S.idUsuario 
+		INNER JOIN detallesolicitud AS DTS ON DTS.idSolicituDe = S.idSolicitud
+		INNER JOIN personas AS P ON DTS.idVisitante = P.idPersona 
+		INNER JOIN empresa AS EM ON P.idEmpresa = EM.idEmpresa WHERE idSolicitud = @id;
+	END
+	IF(@action = 'LD')
+	BEGIN
+		---search detalleSolicitud---
+		SELECT DTS.idDetalle, p.nombreCompleto, p.docIdentidad FROM detallesolicitud AS DTS
+		INNER JOIN personas AS P ON DTS.idVisitante = P.idPersona
+		WHERE DTS.idSolicituDe = @id;
+	END
+GO
+
+GO
+CREATE PROCEDURE updateSolicitud
+@id int,
+@est int
+AS
+	---update state solicitud---
+	UPDATE solicitud SET idEstado = @est WHERE idSolicitud = @id;
+
+	IF(@est = 7)
+	BEGIN
+		---update detalleIngreso---
+		----cuando el estado de la solicitud cambie a finalizado se tendra que actualizar el campo fechasalida
+		UPDATE DTI SET DTI.fechaHoraSalida = SYSDATETIMEOFFSET()
+		FROM detalleingreso AS DTI INNER JOIN detallesolicitud AS DTS
+		ON DTI.idDetalle = DTS.idDetalle
+		WHERE DTS.idSolicituDe = @id; 
+	END
+GO
+
+GO
+CREATE PROCEDURE ISolicitud
+@user int,
+@fech datetime,
+@moti text,
+@area int
+AS
+BEGIN
+	---insert solicitud---
+	INSERT INTO solicitud(idUsuario, fechaCreacion, fechayHoraVisita, motivo, idEstado, idArea)
+	VALUES (@user, SYSDATETIMEOFFSET(), @fech, @moti, 5, @area);
+	SELECT @@IDENTITY as ID;
+END
+GO
+
+GO
+CREATE PROCEDURE IDSolicitud
+@sol int,
+@per int,
+@idf int
+AS
+BEGIN
+	---insert detalleSolicitud---
+	INSERT INTO detallesolicitud(idSolicituDe, idVisitante, idFormulario)
+	VALUES (@sol, @per, @idf);
+END
+GO
+
+GO
+CREATE PROCEDURE IIngreso
+@temp decimal(3,2),
+@detSo int
+AS
+BEGIN
+	---insert detalleIngreso---
+	INSERT INTO detalleingreso(fechaHoraIngreso, fechaHoraSalida, temperatura, idDetalle)
+	VALUES (SYSDATETIMEOFFSET(), '',@temp, @detSo);
+END
+GO
