@@ -11,6 +11,7 @@ import stateRoutes from './routes/states.routes';
 import rolRoutes from './routes/roles.routes';
 import areaRoutes from './routes/areas.routes';
 import tipEntity from './routes/tipEntity.routes';
+import solicitudRoutes from './routes/solicitudes.routers';
 
 const app = express();
 const raiz = "/api";
@@ -32,5 +33,6 @@ app.use(raiz, stateRoutes);
 app.use(raiz, rolRoutes);
 app.use(raiz, areaRoutes);
 app.use(raiz, tipEntity);
+app.use(raiz, solicitudRoutes);
 
 export default app
