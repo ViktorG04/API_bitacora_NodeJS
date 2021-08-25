@@ -468,19 +468,19 @@ AS
 	IF(@action = 'BS')
 	BEGIN
 		---search solicitud---
-		SELECT S.idSolicitud, U.usuario, S.fechayHoraVisita, EM.nombre AS empresa, S.motivo, A.descripcion,  S.idEstado, E.estado FROM solicitud 
-		AS S INNER JOIN estado AS E ON S.idEstado = E.idEstado
+		SELECT S.idSolicitud, P.nombreCompleto, S.fechayHoraVisita, S.motivo, A.descripcion AS Area, S.idEstado, E.estado FROM solicitud AS S
+		INNER JOIN estado AS E ON S.idEstado = E.idEstado
 		INNER JOIN areas AS A ON S.idArea = A.idArea
 		INNER JOIN usuario AS U ON U.idUsuario = S.idUsuario 
-		INNER JOIN detallesolicitud AS DTS ON DTS.idSolicituDe = S.idSolicitud
-		INNER JOIN personas AS P ON DTS.idVisitante = P.idPersona 
-		INNER JOIN empresa AS EM ON P.idEmpresa = EM.idEmpresa WHERE idSolicitud = @id;
+		INNER JOIN personas AS P ON U.idUsuario = P.idEmpleado
+		WHERE S.idSolicitud =  @id;
 	END
-	IF(@action = 'LD')
+	IF(@action = 'BD')
 	BEGIN
 		---search detalleSolicitud---
-		SELECT DTS.idDetalle, p.nombreCompleto, p.docIdentidad FROM detallesolicitud AS DTS
+		SELECT DTS.idDetalle, p.nombreCompleto, p.docIdentidad, E.nombre AS nombre FROM detallesolicitud AS DTS
 		INNER JOIN personas AS P ON DTS.idVisitante = P.idPersona
+		INNER JOIN empresa AS E ON P.idEmpresa = E.idEmpresa
 		WHERE DTS.idSolicituDe = @id;
 	END
 GO
