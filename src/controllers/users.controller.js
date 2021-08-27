@@ -64,7 +64,7 @@ export const updateUserById = async (req, res) => {
 
   const Action = "U";
   const idEm = 1;
-  
+
   var idU = parseInt(idUsuario);
   var idR = parseInt(idRol);
   var idE = parseInt(idEstado);

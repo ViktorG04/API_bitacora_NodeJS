@@ -191,6 +191,10 @@ AS
 	BEGIN
 		SELECT count(idUsuario) AS V FROM usuario WHERE correo LIKE @var;
 	END
+	IF(@action = 'I')
+	BEGIN
+		SELECT idPersona FROM personas WHERE idEmpleado = @var
+	END
 GO;
 
 
@@ -361,7 +365,7 @@ AS
 		INSERT INTO usuario(usuario, correo, pass, idRol) VALUES(@user, @corr, @pass, @rol);
 
 		INSERT INTO personas(nombreCompleto, docIdentidad, idEmpresa, idEmpleado, idEstado, fechayHoraCreacion) 
-		VALUES( @nom, @doc, @emp, (SELECT @@IDENTITY as ID), @est, SYSDATETIMEOffset());
+		VALUES( @nom, @doc, @emp, (SELECT @@IDENTITY as ID), @est, GETDATE());
 	END
 	IF(@action = 'U')
 	BEGIN
@@ -386,7 +390,7 @@ AS
 	BEGIN
 		----insertar personas ---
 		INSERT INTO personas(nombreCompleto, docIdentidad, idEmpresa, idEstado, fechayHoraCreacion) 
-		VALUES( @nom, @doc, @emp, @est, SYSDATETIMEOffset());
+		VALUES( @nom, @doc, @emp, @est, GETDATE());
 		SELECT @@IDENTITY as ID;
 	END
 	IF(@action = 'U')
@@ -410,7 +414,7 @@ AS
 	IF(@action = 'E')
 	BEGIN
 		--buscar empresas---
-		SELECT nombre, empresa.idTipo, tipo FROM empresa INNER JOIN tipov ON empresa.idTipo = tipov.idTipo
+		SELECT idEmpresa, nombre, empresa.idTipo, tipo FROM empresa INNER JOIN tipov ON empresa.idTipo = tipov.idTipo
 		WHERE idEstado = 1 AND nombre LIKE @var;
 	END
 GO;
@@ -462,13 +466,13 @@ AS
 	IF(@action = 'LS')
 	BEGIN
 		---list solicitudes---
-		SELECT S.idSolicitud, S.fechaYHoraVisita, S.idEstado, E.estado FROM solicitud AS S
+		SELECT S.idSolicitud, CONVERT(varchar,fechayHoraVisita,22) as fechaVisita, S.idEstado, E.estado FROM solicitud AS S
 		INNER JOIN estado AS E ON S.idEstado = E.idEstado;
 	END
 	IF(@action = 'BS')
 	BEGIN
 		---search solicitud---
-		SELECT S.idSolicitud, P.nombreCompleto, S.fechayHoraVisita, S.motivo, A.descripcion AS Area, S.idEstado, E.estado FROM solicitud AS S
+		SELECT S.idSolicitud, P.nombreCompleto, CONVERT(varchar,S.fechayHoraVisita,22) AS fechaVisita, S.motivo, A.descripcion AS Area, S.idEstado, E.estado FROM solicitud AS S
 		INNER JOIN estado AS E ON S.idEstado = E.idEstado
 		INNER JOIN areas AS A ON S.idArea = A.idArea
 		INNER JOIN usuario AS U ON U.idUsuario = S.idUsuario 
@@ -478,7 +482,7 @@ AS
 	IF(@action = 'BD')
 	BEGIN
 		---search detalleSolicitud---
-		SELECT DTS.idDetalle, p.nombreCompleto, p.docIdentidad, E.nombre AS nombre FROM detallesolicitud AS DTS
+		SELECT DTS.idDetalle, p.nombreCompleto, p.docIdentidad, E.nombre AS empresa FROM detallesolicitud AS DTS
 		INNER JOIN personas AS P ON DTS.idVisitante = P.idPersona
 		INNER JOIN empresa AS E ON P.idEmpresa = E.idEmpresa
 		WHERE DTS.idSolicituDe = @id;
@@ -497,7 +501,7 @@ AS
 	BEGIN
 		---update detalleIngreso---
 		----cuando el estado de la solicitud cambie a finalizado se tendra que actualizar el campo fechasalida
-		UPDATE DTI SET DTI.fechaHoraSalida = SYSDATETIMEOFFSET()
+		UPDATE DTI SET DTI.fechaHoraSalida = GETDATE()
 		FROM detalleingreso AS DTI INNER JOIN detallesolicitud AS DTS
 		ON DTI.idDetalle = DTS.idDetalle
 		WHERE DTS.idSolicituDe = @id; 
@@ -514,7 +518,7 @@ AS
 BEGIN
 	---insert solicitud---
 	INSERT INTO solicitud(idUsuario, fechaCreacion, fechayHoraVisita, motivo, idEstado, idArea)
-	VALUES (@user, SYSDATETIMEOFFSET(), @fech, @moti, 5, @area);
+	VALUES (@user, GETDATE(), @fech, @moti, 5, @area);
 	SELECT @@IDENTITY as ID;
 END
 GO
@@ -540,6 +544,6 @@ AS
 BEGIN
 	---insert detalleIngreso---
 	INSERT INTO detalleingreso(fechaHoraIngreso, fechaHoraSalida, temperatura, idDetalle)
-	VALUES (SYSDATETIMEOFFSET(), '',@temp, @detSo);
+	VALUES (GETDATE(), '',@temp, @detSo);
 END
 GO

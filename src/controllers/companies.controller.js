@@ -54,6 +54,7 @@ export const getCompanyByName = async (req, res) => {
     return res.status(400).json({ msg: "Bad Request. Please fill all field" });
   }
   var value = nombre + like;
+  console.log(value);
   try {
     const connection = await getConnection();
     const result = await connection
@@ -69,3 +70,24 @@ export const getCompanyByName = async (req, res) => {
     res.send(error.message);
   }
 };
+
+//add new company
+export const createNewCompany = async(nombre, idTipo) =>{
+  const A = 'I';
+  const idE = 1;
+  const idEm = 0;
+  try {
+    const connection = await getConnection();
+    const result = await connection
+    .request()
+    .input("A", A)
+    .input("id", idEm)
+    .input("nm", nombre)
+    .input("tp", idTipo)
+    .input("es", idE)
+    .query(querys.IUEntity);
+    return result.recordset[0]['ID'];
+  } catch (error) {
+    console.error(error)
+  }
+}
