@@ -24,9 +24,9 @@ primary key(idEstado));
 
 INSERT INTO estado(estado) VALUES('Activo');
 INSERT INTO estado(estado) VALUES('Inactivo');
+INSERT INTO estado(estado) VALUES('Pendiente');
 INSERT INTO estado(estado) VALUES('Aprobado');
 INSERT INTO estado(estado) VALUES('Rechazado');
-INSERT INTO estado(estado) VALUES('Pendiente');
 INSERT INTO estado(estado) VALUES('En Progreso');
 INSERT INTO estado(estado) VALUES('Finalizado');
 INSERT INTO estado(estado) VALUES('Cancelado');
@@ -154,31 +154,31 @@ DROP TABLE [dbo].[detalleingreso]
 create table detalleingreso(
 idIngreso int not null IDENTITY(1,1),
 fechaHoraIngreso datetime not null,
-fechaHoraSalida datetime not null,
-temperatura decimal(3,2) not null,
+fechaHoraSalida datetime,
+temperatura float not null,
 idDetalle int not null,
 primary key(idIngreso),
 foreign key(idDetalle) references detallesolicitud(idDetalle));
 
-GO;
+GO
+
 
 ------------Store Procedures ------------
-
----validar login -----
 GO
+---validar login -----
 CREATE PROCEDURE UserLogin
 @corr varchar(30),
 @pass varchar(12)
 AS
-BEGIN
-	SELECT idUsuario, correo, pass, idRol, nombreCompleto, idEstado AS estado FROM usuario 
-	INNER JOIN personas ON personas.idEmpleado = usuario.idUsuario
-	WHERE correo = @corr AND pass = @pass;
-END
-GO;
-
----validar campos usuario-----
+	BEGIN
+		SELECT idUsuario, correo, pass, idRol, nombreCompleto, idEstado AS estado FROM usuario 
+		INNER JOIN personas ON personas.idEmpleado = usuario.idUsuario
+		WHERE correo = @corr AND pass = @pass;
+	END
 GO
+
+GO
+---validar campos usuario-----
 CREATE PROCEDURE ValidationUser
 @action char(1),
 @var varchar(30)
@@ -195,11 +195,10 @@ AS
 	BEGIN
 		SELECT idPersona FROM personas WHERE idEmpleado = @var
 	END
-GO;
-
-
---store procedure: states ---
 GO
+
+GO
+--store procedure: states ---
 CREATE PROCEDURE CrupState
 @action char(1),
 @id int
@@ -212,11 +211,10 @@ AS
 	BEGIN
 		SELECT * FROM estado WHERE idEstado = @id;
 	END
-GO;
+GO
 
-
+GO
 --store procedure: rol ---
- GO
 CREATE PROCEDURE CrupRol
 @action char(1),
 @id int,
@@ -238,12 +236,11 @@ AS
 	BEGIN
 		UPDATE rol SET rol = @var WHERE idRol = @id;
 	END
-
-GO;
-
-
----store procedure: areas ----
 GO
+
+
+GO
+---store procedure: areas ----
 CREATE PROCEDURE CrupAreas
 	@action char(1),
 	@id int,
@@ -269,12 +266,12 @@ END
 IF(@action = 'D')
 BEGIN
 	DELETE areas WHERE idArea = @id;
-END;
-GO;
-
-
----store procedure: entidades ----
+END
 GO
+
+
+GO
+---store procedure: entidades ----
 CREATE PROCEDURE IUEntity
 @action char(1),
 @id int,
@@ -295,11 +292,11 @@ AS
 			UPDATE personas SET personas.idEstado = @es WHERE personas.idEmpresa=@id;
 		END
 	END
-GO;
-
-
----store procedure: tipo-empresa ----
 GO
+
+
+GO
+---store procedure: tipo-empresa ----
 CREATE PROCEDURE CrupTipEmp
 @action char(1),
 @id int
@@ -312,11 +309,11 @@ AS
 	BEGIN
 		SELECT * FROM tipov WHERE idTipo = @id;
 	END
-GO;
-
-
---- Store procedures: preguntas ----
 GO
+
+
+GO
+--- Store procedures: preguntas ----
 CREATE PROCEDURE CrupPregunta
 @id int,
 @action char(1),
@@ -342,11 +339,11 @@ AS
 	BEGIN
 		DELETE preguntas WHERE idPregunta = @id;
 	END
-GO;
-
-
---- store procedure: users ----
 GO
+
+
+GO
+--- store procedure: users ----
 CREATE PROCEDURE IUUsers
 @action char(1),
 @user varchar(30),
@@ -375,9 +372,10 @@ AS
 		---update table persons----
 		UPDATE personas SET nombreCompleto = @nom, docIdentidad = @doc, idEstado = @est WHERE idEmpleado = @id;
 	END
-GO;
+GO
 
 GO
+--- store procedure: Insert and Update users ----
 CREATE PROCEDURE IUPersons
 @action char(1),
 @nom varchar(60),
@@ -399,9 +397,10 @@ AS
 		UPDATE personas SET nombreCompleto = @nom, docIdentidad = @doc, idEmpresa = @emp,
 		 idEstado = @est WHERE idPersona = @id;
 	END
-GO;
+GO
 
 GO
+--- store procedure: searh persons and employee bye name ----
 CREATE PROCEDURE searchEP
 @action char(1),
 @var varchar(8)
@@ -417,7 +416,7 @@ AS
 		SELECT idEmpresa, nombre, empresa.idTipo, tipo FROM empresa INNER JOIN tipov ON empresa.idTipo = tipov.idTipo
 		WHERE idEstado = 1 AND nombre LIKE @var;
 	END
-GO;
+GO
 
 GO
 CREATE PROCEDURE listEEPS
@@ -455,13 +454,14 @@ AS
 		SELECT idPersona, nombreCompleto, docIdentidad, nombre, estado FROM personas INNER JOIN empresa
 		ON personas.idEmpresa = empresa.idEmpresa INNER JOIN estado ON estado.idEstado = personas.idEstado
 		WHERE personas.idEmpresa = @id;
-	END;
+	END
 GO
 
 GO
 CREATE PROCEDURE listSolicitudes
 @action char(2),
-@id int
+@id int,
+@es int
 AS
 	IF(@action = 'LS')
 	BEGIN
@@ -481,6 +481,16 @@ AS
 	END
 	IF(@action = 'BD')
 	BEGIN
+		IF(@es = 6 & 7)
+		BEGIN
+		---search detalleSolicitud when estate 6 or 7
+		SELECT DTS.idDetalle, E.nombre AS empresa, P.nombreCompleto, p.docIdentidad, DSI.temperatura, DSI.fechaHoraIngreso, 
+		DSI.fechaHoraSalida  FROM detallesolicitud AS DTS
+		INNER JOIN personas AS P ON DTS.idVisitante = P.idPersona
+		INNER JOIN empresa AS E ON P.idEmpresa = E.idEmpresa
+		INNER JOIN detalleingreso AS DSI ON DSI.idDetalle = DTS.idDetalle
+		WHERE DTS.idSolicituDe = @id;
+		END
 		---search detalleSolicitud---
 		SELECT DTS.idDetalle, p.nombreCompleto, p.docIdentidad, E.nombre AS empresa FROM detallesolicitud AS DTS
 		INNER JOIN personas AS P ON DTS.idVisitante = P.idPersona
@@ -518,7 +528,7 @@ AS
 BEGIN
 	---insert solicitud---
 	INSERT INTO solicitud(idUsuario, fechaCreacion, fechayHoraVisita, motivo, idEstado, idArea)
-	VALUES (@user, GETDATE(), @fech, @moti, 5, @area);
+	VALUES (@user, GETDATE(), @fech, @moti, 3, @area);
 	SELECT @@IDENTITY as ID;
 END
 GO
@@ -538,12 +548,12 @@ GO
 
 GO
 CREATE PROCEDURE IIngreso
-@temp decimal(3,2),
+@temp float,
 @detSo int
 AS
 BEGIN
 	---insert detalleIngreso---
-	INSERT INTO detalleingreso(fechaHoraIngreso, fechaHoraSalida, temperatura, idDetalle)
-	VALUES (GETDATE(), '',@temp, @detSo);
+	INSERT INTO detalleingreso(fechaHoraIngreso, temperatura, idDetalle)
+	VALUES (GETDATE(),@temp, @detSo);
 END
 GO

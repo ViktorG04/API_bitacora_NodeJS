@@ -12,8 +12,9 @@ export const querys = {
     getEmployee: 'EXEC IUUsers @A, @user, @co, @pas, @nom, @doc, @rol, @em, @est, @id',
     getPersons: 'EXEC IUPersons @A, @nom, @doc, @emp, @est, @id',
     getLogin: 'EXEC UserLogin @email, @pass',
-    listSolicitudes: 'EXEC listSolicitudes @A, @id',
-    updateStateSolicitud: 'EXEC updateSolicitud @id, @est',
+    listSolicitudes: 'EXEC listSolicitudes @A, @id, @es',
+    getSolicitud: 'EXEC updateSolicitud @id, @est',
     postSolicitud: 'EXEC ISolicitud @user, @fech, @mo, @area',
     postDSolicitud: 'EXEC IDSolicitud @sol, @per, @idf',
+    postDIngreso: 'EXEC IIngreso @temp, @idDP',
 };
