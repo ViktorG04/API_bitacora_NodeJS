@@ -195,6 +195,10 @@ AS
 	BEGIN
 		SELECT idPersona FROM personas WHERE idEmpleado = @var
 	END
+	IF(@action = 'R')
+	BEGIN
+		SELECT idRol FROM usuario WHERE idUsuario = @var
+	END
 GO
 
 GO
@@ -459,20 +463,32 @@ GO
 
 GO
 CREATE PROCEDURE listSolicitudes
-@action char(2),
 @id int,
-@es int
+@rol int
 AS
-	IF(@action = 'LS')
+	IF(@rol = 2 OR @rol = 3)
 	BEGIN
-		---list solicitudes---
-		SELECT S.idSolicitud, CONVERT(varchar,fechayHoraVisita,22) as fechaVisita, S.idEstado, E.estado FROM solicitud AS S
+		SELECT S.idSolicitud, FORMAT(S.fechayHoraVisita,'dd/MM/yyyy hh:mm tt') AS fechaVisita, S.idEstado, 
+		E.estado FROM solicitud AS S
+		INNER JOIN estado AS E ON S.idEstado = E.idEstado WHERE S.idUsuario = @id;
+	END
+	IF(@rol = 1 OR @rol = 4)
+	BEGIN
+		SELECT S.idSolicitud, FORMAT(S.fechayHoraVisita,'dd/MM/yyyy hh:mm tt') AS fechaVisita, S.idEstado, 
+		E.estado FROM solicitud AS S
 		INNER JOIN estado AS E ON S.idEstado = E.idEstado;
 	END
+GO
+
+GO
+CREATE PROCEDURE detalleSolicitudes
+@action char(2),
+@id int
+AS
 	IF(@action = 'BS')
 	BEGIN
 		---search solicitud---
-		SELECT S.idSolicitud, P.nombreCompleto, CONVERT(varchar,S.fechayHoraVisita,22) AS fechaVisita, S.motivo, A.descripcion AS Area, S.idEstado, E.estado FROM solicitud AS S
+		SELECT S.idSolicitud, P.nombreCompleto, FORMAT(S.fechayHoraVisita,'dd/MM/yyyy hh:mm tt') AS fechaVisita, S.motivo, A.descripcion AS Area, S.idEstado, E.estado FROM solicitud AS S
 		INNER JOIN estado AS E ON S.idEstado = E.idEstado
 		INNER JOIN areas AS A ON S.idArea = A.idArea
 		INNER JOIN usuario AS U ON U.idUsuario = S.idUsuario 
@@ -481,21 +497,27 @@ AS
 	END
 	IF(@action = 'BD')
 	BEGIN
-		IF(@es = 6 & 7)
-		BEGIN
-		---search detalleSolicitud when estate 6 or 7
-		SELECT DTS.idDetalle, E.nombre AS empresa, P.nombreCompleto, p.docIdentidad, DSI.temperatura, DSI.fechaHoraIngreso, 
-		DSI.fechaHoraSalida  FROM detallesolicitud AS DTS
-		INNER JOIN personas AS P ON DTS.idVisitante = P.idPersona
-		INNER JOIN empresa AS E ON P.idEmpresa = E.idEmpresa
-		INNER JOIN detalleingreso AS DSI ON DSI.idDetalle = DTS.idDetalle
-		WHERE DTS.idSolicituDe = @id;
-		END
 		---search detalleSolicitud---
 		SELECT DTS.idDetalle, p.nombreCompleto, p.docIdentidad, E.nombre AS empresa FROM detallesolicitud AS DTS
 		INNER JOIN personas AS P ON DTS.idVisitante = P.idPersona
 		INNER JOIN empresa AS E ON P.idEmpresa = E.idEmpresa
 		WHERE DTS.idSolicituDe = @id;
+	END
+	IF(@action = 'DI')
+	BEGIN
+		---search detalleIngreso 
+		SELECT DTS.idDetalle, DSI.temperatura,
+		FORMAT(DSI.fechaHoraIngreso, 'dd/MM/yyyy hh:mm tt') AS fechaHoraIngreso, 
+		FORMAT(DSI.fechaHoraSalida, 'dd/MM/yyyy hh:mm tt') AS fechaHoraSalida FROM detallesolicitud AS DTS
+		INNER JOIN personas AS P ON DTS.idVisitante = P.idPersona
+		INNER JOIN empresa AS E ON P.idEmpresa = E.idEmpresa
+		INNER JOIN detalleingreso AS DSI ON DSI.idDetalle = DTS.idDetalle
+		WHERE DTS.idSolicituDe = @id;
+	END
+	IF(@action = 'ES')
+	BEGIN
+		---current state ---
+		SELECT idEstado AS Actual FROM solicitud WHERE idSolicitud = @id;
 	END
 GO
 

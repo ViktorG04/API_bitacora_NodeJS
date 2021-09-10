@@ -1,13 +1,13 @@
 import { Router } from 'express';
 
 import {
- getSolicitudes, getSolicitudById, createNewSolicitudEmployee, createNewSolicitudVisitas, createDetalleIngreso
+ getSolicitudes, getSolicitudById, createNewSolicitudEmployee, createNewSolicitudVisitas, createDetalleIngreso, updateSolicitud
 } from '../controllers/solicitud.controller';
 
 const router = Router();
 
 //all solicitudes
-router.get("/solicitudes", getSolicitudes);
+router.get("/solicitudes/empleado/:id", getSolicitudes);
 
 //only one solicitud
 router.get("/solicitudes/:id", getSolicitudById);
@@ -21,3 +21,6 @@ export default router;
 
 //insert detalleSolicitud
 router.post("/solicitudes/ingreso", createDetalleIngreso);
+
+//update state solicitud
+router.put("/solicitudes/estado", updateSolicitud);

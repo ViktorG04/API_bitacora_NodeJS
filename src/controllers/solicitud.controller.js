@@ -4,8 +4,25 @@ import { createNewCompany } from "./companies.controller";
 
 //all solicitudes
 export const getSolicitudes = async (req, res) => {
-    var allSolicitudes;
-    allSolicitudes = await searchSolicitud(0, "LS", 0);
+    var id = req.params.id;
+    var allSolicitudes, idR;
+    idR = await detalleEmployee(id, 'R');
+    idR = idR['idRol'];
+    allSolicitudes = await listSolicitudes(id, idR);
+
+    if(idR == 4){
+        for(const i in allSolicitudes){
+            console.log(allSolicitudes[i]['estado']);
+            if(allSolicitudes[i]['estado'] == "En Progreso"){
+            }
+            else if(allSolicitudes[i]['estado'] == "Aprobado"){
+            }
+            else{
+                delete allSolicitudes[i];
+            }
+        }
+    };
+
     //enviar json
     res.json(allSolicitudes);
 };
@@ -13,49 +30,42 @@ export const getSolicitudes = async (req, res) => {
 //solicitud bye id
 export const getSolicitudById = async (req, res) => {
     var id = req.params.id;
-    var resultSolicitud, resultDetalle, mostrarFecha;
-    var mostrarDetalleSolicitud, persona, detalle, datos = {};
+    var resultSolicitud, resultDetalle, resultIngreso;
+    var persona = {};
     var allpersonas = [];
 
-    //get details solicitud
-    resultSolicitud = await searchSolicitud(id, "BS", 0);
-    var idE = resultSolicitud[0]["idEstado"];
-
     //get all people of solicitud
-    resultDetalle = await searchSolicitud(id, "BD", idE);
-
+    resultDetalle = await searchSolicitud(id, "BD");
     for (const i in resultDetalle) {
-
         persona = {
             idDetalle: resultDetalle[i]['idDetalle'],
             nombre: resultDetalle[i]['nombreCompleto'],
             dui: resultDetalle[i]['docIdentidad']
         };
-        if(resultDetalle[i]['temperatura']){
-            persona.push({
-                temperatura: resultDetalle[i]['temperatura'],
-                horaIngreso: resultDetalle[i]['fechaHoraIngreso'],
-                horaSalida: resultDetalle[i]['fechaHoraSalida']
-            });
-          
-        }
         allpersonas.push(persona);
     };
-    
-    mostrarDetalleSolicitud = {
-        idSolicitud: resultSolicitud[0]["idSolicitud"],
-        solicitante: resultSolicitud[0]["nombreCompleto"],
-        fechayHoraVisita: resultSolicitud[0]["fechaVisita"],
-        empresa: resultDetalle[0]["empresa"],
-        motivoVisita: resultSolicitud[0]["motivo"],
-        areaIngresar: resultSolicitud[0]["Area"],
-        idEstado: idE,
-        estado: resultSolicitud[0]["estado"],
-        personas: allpersonas,
+
+    //get all details ingreso
+    resultIngreso = await searchSolicitud(id, "DI");
+    if (resultIngreso.length > 0) {
+        for (const i in allpersonas) {
+            for (const x in resultIngreso) {
+                if (allpersonas[i]["idDetalle"] == resultIngreso[x]['idDetalle']) {
+                    allpersonas[i].temperatura = resultIngreso[x]['temperatura'];
+                    allpersonas[i].horaIngreso = resultIngreso[x]['fechaHoraIngreso'];
+                    allpersonas[i].horaSalida = resultIngreso[x]['fechaHoraSalida'];
+                };
+            };
+        };
     };
 
+    //get details solicitud
+    resultSolicitud = await searchSolicitud(id, "BS");
+    resultSolicitud[0].empresa = resultDetalle[0]["empresa"];
+    resultSolicitud[0].personas = allpersonas;
+
     //send json
-    res.json(mostrarDetalleSolicitud);
+    res.json(resultSolicitud[0]);
 };
 
 //add new solicitud bye employee
@@ -80,8 +90,8 @@ export const createNewSolicitudEmployee = async (req, res) => {
             .json({ msg: "Bad Request. Error creating Solicitud" });
     }
     //get idperson of user
-    idP = await idPerson(idU);
-
+    idP = await detalleEmployee(idU, 'I');
+    idP = idP['idPersona'];
     var idF = 1;
     //add new detalleSolicitud
     resultDetalle = await addDetalleSolicitud(idS, idP, idF);
@@ -101,6 +111,10 @@ export const createNewSolicitudVisitas = async (req, res) => {
     if (isNaN(idU) || isNaN(idEmp) || empresa == "" || fechayHoraVisita == "" || motivo == "" || isNaN(idTip) ||
         isNaN(idA) || personas.length == 0) {
         return res.status(400).json({ msg: "Bad Request. Please fill all fields" });
+    }
+
+    if (personas.length > 5) {
+        return res.status(400).json({ msg: "Bad Request. Please maximum 5 people" });
     }
 
     fecha = await fechFormat(fechayHoraVisita);
@@ -135,8 +149,7 @@ export const createNewSolicitudVisitas = async (req, res) => {
 export const createDetalleIngreso = async (req, res) => {
     const { idSolicitud, personas } = req.body;
 
-    var idS, idD, temp, resultState, resultDeIngreso;
-    var resultCreation = [];
+    var idS, idD, temp, resultState, resultDeIngreso, resultCreation, idEA, msj;
 
     idS = parseInt(idSolicitud);
 
@@ -155,28 +168,65 @@ export const createDetalleIngreso = async (req, res) => {
         //call function
         resultDeIngreso = await insertTempPerson(temp, idD);
         if (resultDeIngreso == 'OK') {
-            resultCreation.push(i);
+            resultCreation = resultCreation + i;
         }
     };
-    if (resultCreation.length != personas.length) {
+
+    if (resultCreation != personas.length) {
         return res.status(400).json({ msg: "Bad Request. Error creating DetalleIngreso" });
     }
 
-    //solicitud status in progress
-    resultState = await updateSolicitudState(idS, 6);
+    idEA = await searchSolicitud(idS, 'ES');
+    if (idEA[0]['Actual'] == 3) {
+        //solicitud status in progress
+        resultState = await updateSolicitudState(idS, 6);
+    }
+    msj = "fields affected";
 
-    res.json({ resultState });
+    res.json({ msj });
+};
+
+//update state solicitud
+export const updateSolicitud = async (req, res) => {
+    const { idSolicitud, idEstado } = req.body;
+
+    var idS, idNE, idEA;
+    idS = parseInt(idSolicitud);
+    idNE = parseInt(idEstado);
+
+    if (isNaN(idS) || isNaN(idNE) || idS == 0, idNE == 0) {
+        return res.status(400).json({ msg: "Bad Request. Please fill all fields" });
+    }
+
+    idEA = await searchSolicitud(idS, 'ES');
+    idEA = idEA[0]['Actual'];
+
+
 };
 
 //function consult solicitudes
-async function searchSolicitud(id, action, A) {
+async function searchSolicitud(id, action) {
+    try {
+        const connection = await getConnection();
+        const result = await connection
+            .request()
+            .input("A", action)
+            .input("id", id)
+            .query(querys.getDetalleSolicitud);
+        return result.recordset;
+    } catch (error) {
+        console.error(error);
+    }
+};
+
+//function list solicitudes
+async function listSolicitudes(id, rol) {
     try {
         const connection = await getConnection();
         const result = await connection
             .request()
             .input("id", id)
-            .input("A", action)
-            .input("es", A)
+            .input("rol", rol)
             .query(querys.listSolicitudes);
         return result.recordset;
     } catch (error) {
@@ -219,15 +269,15 @@ async function addDetalleSolicitud(idSolicitud, idPerson, idForm) {
 };
 
 //search idPerson
-async function idPerson(id) {
+async function detalleEmployee(id, action) {
     try {
         const connection = await getConnection();
         const result = await connection
             .request()
-            .input("A", "I")
+            .input("A", action)
             .input("var", id)
             .query(querys.validatePerson);
-        var R = result.recordset[0]["idPersona"];
+        var R = result.recordset[0];
         return R;
     } catch (error) {
         console.error(error);
@@ -242,7 +292,8 @@ async function fechFormat(fecha) {
         if (fecha[0].indexOf("/") >= 1) {
             nuevaFecha = fecha[0].split("/").reverse().join("-");
             nuevaFecha = nuevaFecha + " ";
-        } else {
+        }
+        else {
             nuevaFecha = fecha[0].split("-").reverse().join("-");
             nuevaFecha = nuevaFecha + " ";
         }
@@ -252,12 +303,6 @@ async function fechFormat(fecha) {
         console.error(error);
     }
 };
-
-async function fechIngreso(fecha){
-    var nuevaFecha;
-    fecha = fecha.split("T");
-    console.log(fecha);
-}
 
 //function update state of the solicitud
 async function updateSolicitudState(solicitud, estado) {
