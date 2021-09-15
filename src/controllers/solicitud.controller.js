@@ -1,6 +1,16 @@
-import { getConnection, querys } from "../database";
 import { createNewPerson } from "./persons.controller";
 import { createNewCompany } from "./companies.controller";
+import { sendEmailAppService } from "./notificacion";
+import {
+    searchSolicitud,
+    listSolicitudes,
+    addSolicitud,
+    addDetalleSolicitud,
+    detalleEmployee,
+    updateSolicitudState,
+    insertTempPerson,
+    dataSolicitud
+} from "./solicitud.consults";
 
 //all solicitudes
 export const getSolicitudes = async (req, res) => {
@@ -10,14 +20,14 @@ export const getSolicitudes = async (req, res) => {
     idR = idR['idRol'];
     allSolicitudes = await listSolicitudes(id, idR);
 
-    if(idR == 4){
-        for(const i in allSolicitudes){
+    if (idR == 4) {
+        for (const i in allSolicitudes) {
             console.log(allSolicitudes[i]['estado']);
-            if(allSolicitudes[i]['estado'] == "En Progreso"){
+            if (allSolicitudes[i]['estado'] == "En Progreso") {
             }
-            else if(allSolicitudes[i]['estado'] == "Aprobado"){
+            else if (allSolicitudes[i]['estado'] == "Aprobado") {
             }
-            else{
+            else {
                 delete allSolicitudes[i];
             }
         }
@@ -80,21 +90,29 @@ export const createNewSolicitudEmployee = async (req, res) => {
         return res.status(400).json({ msg: "Bad Request. Please fill all fields" });
     }
 
-    fecha = await fechFormat(fechayHoraVisita);
+    //validation and format date
+    fecha = await fechSolicitud(fechayHoraVisita);
+    if (fecha == '0-00-0000') {
+        return res.status(400).json({ msg: "Error with the time of solicitud" });
+    }
 
     //add new solicitud
     idS = await addSolicitud(idU, fecha, motivo, idA);
     if (idS == null) {
-        return res
-            .status(400)
-            .json({ msg: "Bad Request. Error creating Solicitud" });
+        return res.status(400).json({ msg: "Bad Request. Error creating Solicitud" });
     }
+
     //get idperson of user
     idP = await detalleEmployee(idU, 'I');
     idP = idP['idPersona'];
     var idF = 1;
+
     //add new detalleSolicitud
     resultDetalle = await addDetalleSolicitud(idS, idP, idF);
+
+    //sen email to rrhh
+    sendEmailRRHH(nombreCompleto, fechayHoraVisita, idS, "Creada!");
+
     res.json({ resultDetalle });
 };
 
@@ -106,7 +124,7 @@ export const createNewSolicitudVisitas = async (req, res) => {
     var idA = parseInt(idArea);
     var idEmp = parseInt(idEmpresa);
     var idTip = parseInt(idTipoEmpresa);
-    var idP, idS, fecha, resultDetalle;
+    var idP, idS, fecha, resultDetalle, nombre;
 
     if (isNaN(idU) || isNaN(idEmp) || empresa == "" || fechayHoraVisita == "" || motivo == "" || isNaN(idTip) ||
         isNaN(idA) || personas.length == 0) {
@@ -117,7 +135,13 @@ export const createNewSolicitudVisitas = async (req, res) => {
         return res.status(400).json({ msg: "Bad Request. Please maximum 5 people" });
     }
 
-    fecha = await fechFormat(fechayHoraVisita);
+    //validation and format date
+    fecha = await fechSolicitud(fechayHoraVisita);
+    if (fecha == '0-00-0000') {
+        return res
+            .status(400)
+            .json({ msg: "Error with the time of solicitud" });
+    }
 
     //add new solicitud
     idS = await addSolicitud(idU, fecha, motivo, idA);
@@ -142,6 +166,12 @@ export const createNewSolicitudVisitas = async (req, res) => {
         //add new detalleSolicitud
         resultDetalle = await addDetalleSolicitud(idS, idP, idF);
     }
+
+    //sen email to rrhh
+    nombre = await detalleEmployee(idU, 'N');
+    nombre = nombre['Nombre'];
+    sendEmailRRHH(nombre, fechayHoraVisita, idS, "Creada!");
+
     res.json({ resultDetalle });
 };
 
@@ -149,7 +179,7 @@ export const createNewSolicitudVisitas = async (req, res) => {
 export const createDetalleIngreso = async (req, res) => {
     const { idSolicitud, personas } = req.body;
 
-    var idS, idD, temp, resultState, resultDeIngreso, resultCreation, idEA, msj;
+    var idS, idD, temp, resultDeIngreso, resultCreation, idEA, msj;
 
     idS = parseInt(idSolicitud);
 
@@ -176,10 +206,10 @@ export const createDetalleIngreso = async (req, res) => {
         return res.status(400).json({ msg: "Bad Request. Error creating DetalleIngreso" });
     }
 
-    idEA = await searchSolicitud(idS, 'ES');
-    if (idEA[0]['Actual'] == 3) {
+    idEA = await dataSolicitud(idS, 'ES');
+    if (idEA['Actual'] == 3) {
         //solicitud status in progress
-        resultState = await updateSolicitudState(idS, 6);
+        updateSolicitudState(idS, 6);
     }
     msj = "fields affected";
 
@@ -187,101 +217,69 @@ export const createDetalleIngreso = async (req, res) => {
 };
 
 //update state solicitud
-export const updateSolicitud = async (req, res) => {
-    const { idSolicitud, idEstado } = req.body;
+export const updateStateSolicitud = async (req, res) => {
+    const { idUsuario, idSolicitud, idEstado } = req.body;
 
-    var idS, idNE, idEA;
+    var idU, idR, idS, idNE, idEA, datos, resultState;
+
+    idU = parseInt(idUsuario);
     idS = parseInt(idSolicitud);
     idNE = parseInt(idEstado);
 
-    if (isNaN(idS) || isNaN(idNE) || idS == 0, idNE == 0) {
+    if (isNaN(idU) || isNaN(idS) || isNaN(idNE) || idS == 0, idNE == 0) {
         return res.status(400).json({ msg: "Bad Request. Please fill all fields" });
     }
 
-    idEA = await searchSolicitud(idS, 'ES');
-    idEA = idEA[0]['Actual'];
+    idEA = await dataSolicitud(idS, 'ES');
+    idEA = idEA['Actual'];
 
+    idR = await detalleEmployee(idU, 'R');
+    idR = idR['idRol'];
 
+    datos = await dataSolicitud(idS, 'DS');
+
+    if (idNE == 8 & (idR == 1 || idR == 2 || idR == 3)) {
+        if (idEA == 5 || idEA == 6 || idEA == 7 || idEA == 8) {
+            return res.status(400).json({ msg: "error al cancelar solicitud" });
+        } else {
+            resultState = await updateSolicitudState(idS, idNE);
+            sendEmailRRHH(datos['nombreCompleto'], datos['fecha'], idS, "Cancelada");
+            sendEmailEmployee(datos['correo'], datos['fecha'], idS, idNE);
+        }
+    } else if (idR == 1 & (idNE == 4 || idNE == 5)) {
+        if (idEA == 3) {
+            resultState = await updateSolicitudState(idS, idNE);
+            sendEmailEmployee(datos['correo'], datos['fecha'], idS, idNE);
+        } else {
+            return res.status(400).json({ msg: "error no se puede Aprobar o Rechazar la solicitud actual" });
+        }
+    } else if (idNE == 7 & (idR == 1 & idR == 4)) {
+        if (idEA == 6) {
+            resultState = await updateSolicitudState(idS, idNE);
+            console.log("solicitud finalizada");
+        }
+        else {
+            return res.status(400).json({ msg: "error no se puede dar por Finalizada la solicitud actual" });
+        }
+    } else {
+        return res.status(400).json({ msg: "error tiene permisos para cambiar el estado de la solcitud actual" });
+    }
+
+    res.json({ resultState });
 };
 
-//function consult solicitudes
-async function searchSolicitud(id, action) {
-    try {
-        const connection = await getConnection();
-        const result = await connection
-            .request()
-            .input("A", action)
-            .input("id", id)
-            .query(querys.getDetalleSolicitud);
-        return result.recordset;
-    } catch (error) {
-        console.error(error);
-    }
-};
+//validation date
+async function fechSolicitud(fecha) {
+    var fechaSQL, comparar;
+    fecha = await fechFormat(fecha);
 
-//function list solicitudes
-async function listSolicitudes(id, rol) {
-    try {
-        const connection = await getConnection();
-        const result = await connection
-            .request()
-            .input("id", id)
-            .input("rol", rol)
-            .query(querys.listSolicitudes);
-        return result.recordset;
-    } catch (error) {
-        console.error(error);
-    }
-};
+    fechaSQL = await dataSolicitud(0, 'TI');
+    comparar = await fechFormat(fechaSQL['fecha']);
 
-//function insert solicitud
-async function addSolicitud(idUser, fecha, motivo, area) {
-    try {
-        const connection = await getConnection();
-        const result = await connection
-            .request()
-            .input("user", idUser)
-            .input("fech", fecha)
-            .input("mo", motivo)
-            .input("area", area)
-            .query(querys.postSolicitud);
-        return result.recordset[0]["ID"];
-    } catch (error) {
-        console.error(error);
+    if (fecha < comparar) {
+        fecha = "0-00-0000";
     }
-};
-
-//function insert detalleSolicitud
-async function addDetalleSolicitud(idSolicitud, idPerson, idForm) {
-    try {
-        const connection = await getConnection();
-        await connection
-            .request()
-            .input("sol", idSolicitud)
-            .input("per", idPerson)
-            .input("idf", idForm)
-            .query(querys.postDSolicitud);
-        var msg = "fields affected";
-        return msg;
-    } catch (error) {
-        console.error(error);
-    }
-};
-
-//search idPerson
-async function detalleEmployee(id, action) {
-    try {
-        const connection = await getConnection();
-        const result = await connection
-            .request()
-            .input("A", action)
-            .input("var", id)
-            .query(querys.validatePerson);
-        var R = result.recordset[0];
-        return R;
-    } catch (error) {
-        console.error(error);
-    }
+    return fecha;
 };
 
 //function format fech
@@ -304,34 +302,38 @@ async function fechFormat(fecha) {
     }
 };
 
-//function update state of the solicitud
-async function updateSolicitudState(solicitud, estado) {
-    try {
-        const connection = await getConnection();
-        await connection
-            .request()
-            .input("id", solicitud)
-            .input("est", estado)
-            .query(querys.getSolicitud);
-        var msg = "fields affected";
-        return msg;
-    } catch (error) {
-        console.error(error);
+//send email to rrhh
+async function sendEmailRRHH(nombre, fecha, solicitud, estado) {
+    var rrhhh, msj;
+    if (estado == "Creada!") {
+        msj = "Hola Administrador, Queremos comentarle que " + nombre +
+            " ha creado la solicitud N°" + solicitud + " para el ingreso a la oficina el dia " + fecha;
+    } else {
+        msj = "Hola Administrador, Queremos comentarle que " + nombre +
+            " ha cancelado la solicitud N°" + solicitud + " para el ingreso a la oficina el dia " + fecha;
     }
+    rrhhh = await detalleEmployee(0, 'U');
+    for (const i in rrhhh) {
+        sendEmailAppService(estado, rrhhh[i]['correo'], msj);
+    };
 };
 
-//function insert temperatura of the people
-async function insertTempPerson(temperatura, detalle) {
-    try {
-        const connection = await getConnection();
-        await connection
-            .request()
-            .input("temp", temperatura)
-            .input("idDP", detalle)
-            .query(querys.postDIngreso);
-        var msg = "OK";
-        return msg;
-    } catch (error) {
-        console.error(error);
+//send email to employee
+async function sendEmailEmployee(correo, fecha, solicitud, estado) {
+    var msj;
+    if (estado == 4) {
+        estado = "Aprobada";
+        msj = "Notificando que su solicitud N°" + solicitud + " Ha sido " + estado + " con exito para el dia " + fecha;
+
+    } else if (estado == 5) {
+        estado = "Rechazada"
+        msj = "Notificando que su solicitud N°" + solicitud + " Ha sido " + estado + " para el dia " + fecha +
+            " Favor contactar con personal de Recursos Humanos";
+
+    } else {
+        estado = "Cancelada";
+        msj = "Notificando que su solicitud N°" + solicitud + " Ha sido " + estado + " para el dia " + fecha +
+            " Cualquier consulta contacte con Recursos Humanos";
     }
+    sendEmailAppService(estado, correo, msj);
 };

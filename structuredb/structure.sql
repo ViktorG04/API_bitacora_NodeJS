@@ -191,13 +191,33 @@ AS
 	BEGIN
 		SELECT count(idUsuario) AS V FROM usuario WHERE correo LIKE @var;
 	END
+GO
+
+---store procedure: data employees
+GO
+CREATE PROCEDURE dataEmployee
+@action char(1),
+@id int
+AS
 	IF(@action = 'I')
 	BEGIN
-		SELECT idPersona FROM personas WHERE idEmpleado = @var
+		SELECT idPersona FROM personas WHERE idEmpleado = @id
 	END
 	IF(@action = 'R')
 	BEGIN
-		SELECT idRol FROM usuario WHERE idUsuario = @var
+		SELECT idRol FROM usuario WHERE idUsuario = @id
+	END
+	IF(@action = 'U')
+	BEGIN
+		SELECT correo FROM usuario WHERE idRol=1;
+	END
+	IF(@action = 'E')
+	BEGIN
+		SELECT correo FROM usuario WHERE idUsuario=@id;
+	END
+	IF(@action = 'N')
+	BEGIN
+		SELECT nombreCompleto FROM personas WHERE idEmpleado = @id
 	END
 GO
 
@@ -514,10 +534,27 @@ AS
 		INNER JOIN detalleingreso AS DSI ON DSI.idDetalle = DTS.idDetalle
 		WHERE DTS.idSolicituDe = @id;
 	END
+GO
+
+GO
+CREATE PROCEDURE dataSolicitud
+@action char(2),
+@id int
+AS
 	IF(@action = 'ES')
 	BEGIN
 		---current state ---
 		SELECT idEstado AS Actual FROM solicitud WHERE idSolicitud = @id;
+	END
+	IF(@action = 'DS')
+	BEGIN
+		SELECT U.correo, P.nombreCompleto, FORMAT(S.fechayHoraVisita, 'dd/MM/yyyy hh:mm tt') AS fecha  
+		FROM solicitud AS S INNER JOIN usuario AS U ON S.idUsuario = U.idUsuario
+		INNER JOIN personas AS P ON P.idEmpleado = U.idUsuario WHERE idSolicitud = @id;
+	END
+	IF(@action = 'TI')
+	BEGIN
+		SELECT FORMAT(GETDATE(), 'dd/MM/yyyy hh:mm tt') AS fecha;
 	END
 GO
 

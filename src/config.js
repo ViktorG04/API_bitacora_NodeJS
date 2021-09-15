@@ -8,4 +8,5 @@ export default {
     dbServer: process.env.DB_SERVER || "",
     dbDatabase: process.env.DB_DATABASE || "",
     dbPort: parseInt(process.env.DB_PORT || 1433),
+    AppService: process.env.AZURE_LOGIC_APPS,
 }

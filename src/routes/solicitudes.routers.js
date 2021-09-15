@@ -1,7 +1,7 @@
 import { Router } from 'express';
 
 import {
- getSolicitudes, getSolicitudById, createNewSolicitudEmployee, createNewSolicitudVisitas, createDetalleIngreso, updateSolicitud
+ getSolicitudes, getSolicitudById, createNewSolicitudEmployee, createNewSolicitudVisitas, createDetalleIngreso, updateStateSolicitud
 } from '../controllers/solicitud.controller';
 
 const router = Router();
@@ -23,4 +23,4 @@ export default router;
 router.post("/solicitudes/ingreso", createDetalleIngreso);
 
 //update state solicitud
-router.put("/solicitudes/estado", updateSolicitud);
+router.put("/solicitudes/estado", updateStateSolicitud);

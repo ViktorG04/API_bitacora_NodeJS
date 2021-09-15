@@ -112,7 +112,7 @@ export const getValidateDui = async (req, res) => {
       .request()
       .input("A", 'D')
       .input("var", dui)
-      .query(querys.validatePerson);
+      .query(querys.validateDocandEmail);
     var R = result.recordset[0]['V'];
     if (R != 0) {
       return res.status(400).json({ msg: "Bad Request. please enter a different DUI" });

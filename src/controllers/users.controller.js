@@ -94,7 +94,7 @@ async function ValidarCampo(valor, Action) {
       .request()
       .input("A", Action)
       .input("var", valor)
-      .query(querys.validatePerson);
+      .query(querys.validateDocandEmail);
     var R = result.recordset[0]['V'];
     return R;
   } catch (error) {
