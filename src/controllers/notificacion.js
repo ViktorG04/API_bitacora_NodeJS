@@ -9,10 +9,10 @@ export const sendEmailAppService = async(solicitud, correo, mensaje) =>{
         email: correo
     }
     console.log(data);
-   /* try {
+    try {
         const response = await axios.post(config.AppService, data);
         console.log("status send email "+response.status);
     } catch (error) {
         console.log(error);
-    }*/
+    }
 };
