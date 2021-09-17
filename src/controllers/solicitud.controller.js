@@ -1,4 +1,4 @@
-import { createNewPerson } from "./persons.controller";
+import { createNewPerson, detalleEmployee } from "./persons.controller";
 import { createNewCompany } from "./companies.controller";
 import { sendEmailAppService } from "./notificacion";
 import {
@@ -6,7 +6,6 @@ import {
     listSolicitudes,
     addSolicitud,
     addDetalleSolicitud,
-    detalleEmployee,
     updateSolicitudState,
     insertTempPerson,
     dataSolicitud
@@ -41,38 +40,34 @@ export const getSolicitudes = async (req, res) => {
 export const getSolicitudById = async (req, res) => {
     var id = req.params.id;
     var resultSolicitud, resultDetalle, resultIngreso;
-    var persona = {};
-    var allpersonas = [];
+
+    //get details solicitud
+    resultSolicitud = await searchSolicitud(id, "BS");
 
     //get all people of solicitud
     resultDetalle = await searchSolicitud(id, "BD");
-    for (const i in resultDetalle) {
-        persona = {
-            idDetalle: resultDetalle[i]['idDetalle'],
-            nombre: resultDetalle[i]['nombreCompleto'],
-            dui: resultDetalle[i]['docIdentidad']
-        };
-        allpersonas.push(persona);
-    };
 
-    //get all details ingreso
+    //people who are inside
     resultIngreso = await searchSolicitud(id, "DI");
     if (resultIngreso.length > 0) {
-        for (const i in allpersonas) {
+        for (const i in resultDetalle) {
             for (const x in resultIngreso) {
-                if (allpersonas[i]["idDetalle"] == resultIngreso[x]['idDetalle']) {
-                    allpersonas[i].temperatura = resultIngreso[x]['temperatura'];
-                    allpersonas[i].horaIngreso = resultIngreso[x]['fechaHoraIngreso'];
-                    allpersonas[i].horaSalida = resultIngreso[x]['fechaHoraSalida'];
+                if (resultDetalle[i]["idDetalle"] == resultIngreso[x]['idDetalle']) {
+                    resultDetalle[i].temperatura = resultIngreso[x]['temperatura'];
+                    resultDetalle[i].horaIngreso = resultIngreso[x]['fechaHoraIngreso'];
+                    resultDetalle[i].horaSalida = resultIngreso[x]['fechaHoraSalida'];
                 };
             };
         };
     };
 
-    //get details solicitud
-    resultSolicitud = await searchSolicitud(id, "BS");
     resultSolicitud[0].empresa = resultDetalle[0]["empresa"];
-    resultSolicitud[0].personas = allpersonas;
+
+    for (const i in resultDetalle) {
+        delete resultDetalle[i]["empresa"];
+    };
+
+    resultSolicitud[0].personas = resultDetalle;
 
     //send json
     res.json(resultSolicitud[0]);
@@ -119,12 +114,13 @@ export const createNewSolicitudEmployee = async (req, res) => {
 //add new solicitud for all people
 export const createNewSolicitudVisitas = async (req, res) => {
     const { idUsuario, idEmpresa, empresa, fechayHoraVisita, motivo, idTipoEmpresa, idArea, personas } = req.body;
+    var idU, idA, idEmp, idTip, idP, idS, fecha, resultDetalle, nombre;
 
-    var idU = parseInt(idUsuario);
-    var idA = parseInt(idArea);
-    var idEmp = parseInt(idEmpresa);
-    var idTip = parseInt(idTipoEmpresa);
-    var idP, idS, fecha, resultDetalle, nombre;
+    idU = parseInt(idUsuario);
+    idA = parseInt(idArea);
+    idEmp = parseInt(idEmpresa);
+    idTip = parseInt(idTipoEmpresa);
+
 
     if (isNaN(idU) || isNaN(idEmp) || empresa == "" || fechayHoraVisita == "" || motivo == "" || isNaN(idTip) ||
         isNaN(idA) || personas.length == 0) {
@@ -138,9 +134,7 @@ export const createNewSolicitudVisitas = async (req, res) => {
     //validation and format date
     fecha = await fechSolicitud(fechayHoraVisita);
     if (fecha == '0-00-0000') {
-        return res
-            .status(400)
-            .json({ msg: "Error with the time of solicitud" });
+        return res.status(400).json({ msg: "Error with the time of solicitud" });
     }
 
     //add new solicitud

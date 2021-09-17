@@ -18,12 +18,12 @@ export const getPersons = async (req, res) => {
 
 //all persons by company
 export const getPersonsbyCompany = async (req, res) => {
-  const { id } = req.body;
+  var id = req.params.id;
   try {
     const connection = await getConnection();
     const result = await connection.request()
       .input("id", id)
-      .input("A", "LPE")
+      .input("A", 'LPE')
       .query(querys.listEEPS);
     res.json(result.recordset);
   } catch (error) {
@@ -34,13 +34,23 @@ export const getPersonsbyCompany = async (req, res) => {
 
 //only person
 export const getPersonById = async (req, res) => {
-  const { id } = req.body;
+  var idP, result, A;
+
+  idP = req.params.id;
+
+  result = await detalleEmployee(idP, 'B')
+
+  if (result['idEmpleado'] != null) {
+    A = "BE";
+  } else {
+    A = "BP";
+  }
   try {
     const connection = await getConnection();
     const result = await connection
       .request()
-      .input("id", id)
-      .input("A", "BP")
+      .input("id", idP)
+      .input("A", A)
       .query(querys.listEEPS);
     res.json(result.recordset[0]);
   } catch (error) {
@@ -147,5 +157,27 @@ export const getPersonByName = async (req, res) => {
   } catch (error) {
     res.status(500);
     res.send(error.message);
+  }
+};
+
+//search idPerson
+export const detalleEmployee = async (id, action) => {
+  try {
+    const connection = await getConnection();
+    const result = await connection
+      .request()
+      .input("A", action)
+      .input("id", id)
+      .query(querys.getDataEmployee);
+    var R
+    if (action != 'U') {
+      R = result.recordset[0];
+    }
+    else {
+      R = result.recordset;
+    }
+    return R;
+  } catch (error) {
+    console.error(error);
   }
 };

@@ -65,28 +65,6 @@ export const addDetalleSolicitud = async(idSolicitud, idPerson, idForm) =>{
     }
 };
 
-//search idPerson
-export const detalleEmployee = async(id, action) =>{
-    try {
-        const connection = await getConnection();
-        const result = await connection
-            .request()
-            .input("A", action)
-            .input("id", id)
-            .query(querys.getDataEmployee);
-        var R 
-        if(action !='U'){
-            R = result.recordset[0];
-        }
-        else{
-            R = result.recordset;
-        }
-        return R;
-    } catch (error) {
-        console.error(error);
-    }
-};
-
 //function update state of the solicitud
 export const updateSolicitudState = async(solicitud, estado) =>{
     try {

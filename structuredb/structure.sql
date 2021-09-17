@@ -48,7 +48,7 @@ create table usuario(
  idUsuario int not Null  IDENTITY(1,1),
  usuario varchar(30) not null,
  correo varchar(30) not null,
- pass varchar(12) not null,
+ pass varchar(60) not null,
  idRol int not null
  primary key(idUsuario),
  foreign key(idRol) references rol(idRol));
@@ -191,10 +191,15 @@ AS
 	BEGIN
 		SELECT count(idUsuario) AS V FROM usuario WHERE correo LIKE @var;
 	END
+	IF(@action = 'B')
+	BEGIN
+		SELECT P.docIdentidad, U.correo, U.pass FROM personas AS P INNER JOIN usuario AS U ON U.idUsuario = P.idPersona 
+		WHERE P.idEmpleado = @var;
+	END
 GO
 
----store procedure: data employees
 GO
+---store procedure: data employees
 CREATE PROCEDURE dataEmployee
 @action char(1),
 @id int
@@ -218,6 +223,10 @@ AS
 	IF(@action = 'N')
 	BEGIN
 		SELECT nombreCompleto FROM personas WHERE idEmpleado = @id
+	END
+	IF(@action = 'B')
+	BEGIN
+		SELECT idEmpleado FROM personas WHERE idPersona = @id;
 	END
 GO
 
@@ -394,7 +403,7 @@ AS
 		UPDATE usuario SET usuario = @user, correo = @corr, pass = @pass, idRol = @rol WHERE idUsuario = @id;
 
 		---update table persons----
-		UPDATE personas SET nombreCompleto = @nom, docIdentidad = @doc, idEstado = @est WHERE idEmpleado = @id;
+		UPDATE personas SET nombreCompleto = @nom, docIdentidad = @doc WHERE idEmpleado = @id;
 	END
 GO
 
@@ -418,8 +427,23 @@ AS
 	IF(@action = 'U')
 	BEGIN
 		--Actualizar Personas ---
-		UPDATE personas SET nombreCompleto = @nom, docIdentidad = @doc, idEmpresa = @emp,
-		 idEstado = @est WHERE idPersona = @id;
+		UPDATE personas SET nombreCompleto = @nom, docIdentidad = @doc, idEmpresa = @emp WHERE idPersona = @id;
+	END
+GO
+
+GO
+--update state people and employee
+CREATE PROCEDURE StatePersonEmployee
+@action char(1),
+@est int
+AS
+	IF( @action = 'E')
+	BEGIN
+		UPDATE personas SET idEstado = @est WHERE idEmpleado = @id;
+	END
+	IF(@action = 'P')
+	BEGIN
+		UPDATE personas SET IdEstado = @est WHERE idPersona = @id;
 	END
 GO
 
@@ -468,7 +492,7 @@ AS
 	IF(@action = 'BE')
 	BEGIN
 		----search employee ---
-		SELECT idPersona, idUsuario, usuario, nombreCompleto, docIdentidad, correo, idRol, pass, idEstado, idEmpresa
+		SELECT idPersona, idUsuario, usuario, nombreCompleto, docIdentidad, correo, idRol, idEstado, idEmpresa
 		FROM personas INNER JOIN usuario ON personas.idEmpleado = usuario.idUsuario
 		WHERE idPersona = @id;
 	END

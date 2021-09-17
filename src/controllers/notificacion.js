@@ -1,7 +1,6 @@
 import axios from "axios";
 import config from '../config';
 
-
 export const sendEmailAppService = async(solicitud, correo, mensaje) =>{
     var data ={
         task: solicitud,

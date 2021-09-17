@@ -10,10 +10,10 @@ const router = Router();
 router.get("/persons", getPersons);
 
 //all person by company
-router.get("/persons/byIdCompany", getPersonsbyCompany);
+router.get("/persons/byIdCompany/:id", getPersonsbyCompany);
 
 //only one
-router.get("/persons/byId", getPersonById);
+router.get("/persons/:id", getPersonById);
 
 //update penson
 router.put("/persons", updatePersonById);
