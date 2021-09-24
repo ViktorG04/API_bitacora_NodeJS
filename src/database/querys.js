@@ -6,7 +6,7 @@ export const querys = {
     getSearch:   'EXEC searchEP @A, @value',
     getEstate: 'EXEC CrupState @A, @id',
     getRol: 'EXEC CrupRol @A, @id, @var',
-    getArea: 'EXEC CrupAreas @A, @id, @var, @es',
+    getArea: 'EXEC CrupAreas @A, @id, @var, @es, @cap',
     getTipEmp: 'EXEC CrupTipEmp @A, @id',
     validateDocandEmail: 'EXEC ValidationUser @A, @var',
     getDataEmployee: 'EXEC dataEmployee @A, @id',
@@ -20,4 +20,5 @@ export const querys = {
     postSolicitud: 'EXEC ISolicitud @user, @fech, @mo, @area',
     postDSolicitud: 'EXEC IDSolicitud @sol, @per, @idf',
     postDIngreso: 'EXEC IIngreso @temp, @idDP',
+    getCapacidad: 'EXEC capacidadIngress @A, @est, @area, @fech, @id',
 };

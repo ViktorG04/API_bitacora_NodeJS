@@ -111,3 +111,21 @@ export const dataSolicitud = async(id, action) =>{
         console.error(error);
     }
 };
+
+//
+export const capacidadVisitas = async(action, estado, area, fecha, solicitud) =>{
+    try {
+        const connection = await getConnection();
+        const result = await connection
+            .request()
+            .input("A", action)
+            .input("est", estado)
+            .input("area", area)
+            .input("fech", fecha)
+            .input("id", solicitud)
+            .query(querys.getCapacidad);
+            return result.recordset[0];
+    } catch (error) {
+        console.error(error);
+    }
+};

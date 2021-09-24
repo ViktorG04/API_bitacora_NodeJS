@@ -1,3 +1,4 @@
+
 use bitacora;
 
 IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[rol]') AND type in (N'U'))
@@ -37,6 +38,7 @@ DROP TABLE [dbo].[areas]
 create table areas(
 idArea int not null IDENTITY(1,1),
 descripcion varchar(20) not null,
+capacidad int not null,
 idEstado int not null,
 primary key(idArea),
 foreign key(idEstado) references estado(idEstado));
@@ -54,7 +56,7 @@ create table usuario(
  foreign key(idRol) references rol(idRol));
 
  Insert into usuario(usuario, correo, pass, idRol)
- values ('admin', '2534322013@gmail.com',  '123456', '1');
+ values ('admin', 'bitacoraingress@outlook.com',  '$2a$08$UFLfAxxnC7TmVVYWLvO2M.PwdtGtAGpQPhYlK6uLW64XULl.7jea2', '1');
 
  IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[tipov]') AND type in (N'U'))
 DROP TABLE [dbo].[tipov]
@@ -81,7 +83,7 @@ primary key(idEmpresa),
 foreign key(idTipo) references tipov(idTipo),
 foreign Key(idEstado) references estado(idEstado));
 
-INSERT INTO empresa(nombre, idTipo, idEstado) VALUES('Empresa S.A de C.V', 1, 1);
+INSERT INTO empresa(nombre, idTipo, idEstado) VALUES('Tecoloco S.A de C.V', 1, 1);
 
  IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[personas]') AND type in (N'U'))
 DROP TABLE [dbo].[personas]
@@ -99,7 +101,8 @@ foreign key(idEmpresa) references empresa(idEmpresa),
 foreign key(idEmpleado) references usuario(idUsuario),
 foreign key(idEstado) references estado(idEstado));
 
-INSERT INTO personas(nombreCompleto, docIdentidad, idEmpresa, idEmpleado, idEstado, fechayHoraCreacion) VALUES('administrador 1', '0616041291-1', 1, 1, 1, SYSDATETIMEOffset());
+INSERT INTO personas(nombreCompleto, docIdentidad, idEmpresa, idEmpleado, idEstado, fechayHoraCreacion)
+VALUES('usuario por defecto', '0616041291-1', 1, 1, 1, SYSDATETIMEOffset());
 
 IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[preguntas]') AND type in (N'U'))
 DROP TABLE [dbo].[preguntas]
@@ -278,7 +281,8 @@ CREATE PROCEDURE CrupAreas
 	@action char(1),
 	@id int,
 	@des varchar(20),
-	@est int
+	@est int,
+	@cap int
 AS
 IF(@action = 'L')
 BEGIN
@@ -290,11 +294,11 @@ BEGIN
 END
 IF(@action = 'I')
 BEGIN
-	INSERT INTO areas(descripcion, idEstado) VALUES(@des, @est);
+	INSERT INTO areas(descripcion, idEstado, capacidad) VALUES(@des, @est, @cap);
 END
 IF(@action = 'U')
 BEGIN
-	UPDATE areas SET descripcion = @des, idEstado = @est WHERE idArea = @id;
+	UPDATE areas SET descripcion = @des, idEstado = @est, capacidad = @cap WHERE idArea = @id;
 END
 IF(@action = 'D')
 BEGIN
@@ -320,10 +324,7 @@ AS
 	IF(@action = 'U')
 	BEGIN
 		UPDATE empresa SET nombre = @var, idTipo = @tip, idEstado = @es WHERE idEmpresa = @id;
-		IF(@es = 2)
-		BEGIN
-			UPDATE personas SET personas.idEstado = @es WHERE personas.idEmpresa=@id;
-		END
+		UPDATE personas SET personas.idEstado = @es WHERE personas.idEmpresa=@id;
 	END
 GO
 
@@ -435,7 +436,8 @@ GO
 --update state people and employee
 CREATE PROCEDURE StatePersonEmployee
 @action char(1),
-@est int
+@est int,
+@id int
 AS
 	IF( @action = 'E')
 	BEGIN
@@ -578,7 +580,7 @@ AS
 	END
 	IF(@action = 'TI')
 	BEGIN
-		SELECT FORMAT(GETDATE(), 'dd/MM/yyyy hh:mm tt') AS fecha;
+		SELECT FORMAT(GETDATE(), 'dd/MM/yyyy HH:mm') AS fecha;
 	END
 GO
 
@@ -639,4 +641,28 @@ BEGIN
 	INSERT INTO detalleingreso(fechaHoraIngreso, temperatura, idDetalle)
 	VALUES (GETDATE(),@temp, @detSo);
 END
+GO
+
+GO
+---validate ability to approve request---
+CREATE PROCEDURE capacidadIngress
+@action char(1),
+@est int,
+@area int,
+@fech varchar(11),
+@id int
+AS
+	IF(@action = 'S')
+	BEGIN
+		SELECT COUNT(idVisitante) AS total FROM solicitud AS S inner join detallesolicitud AS DS ON s.idSolicitud = DS.idSolicituDe
+		WHERE S.idEstado = @est and S.idArea = @area and CONVERT(VARCHAR(25), fechayHoraVisita, 126) LIKE @fech;
+	END
+	IF(@action = 'C')
+	BEGIN
+		SELECT capacidad FROM areas WHERE idArea = @area;
+	END
+	IF(@action = 'P')
+	BEGIN
+		SELECT COUNT(idVisitante) AS total FROM detallesolicitud WHERE idSolicituDe = @id;
+	END
 GO

@@ -19,30 +19,38 @@ export const getCompanies = async (req, res) => {
 
 //update company
 export const updateCompanyById = async (req, res) => {
-  const { nombre, idTipo, idEstado } = req.body;
+  const { idEmpresa, nombre, idTipo, idEstado } = req.body;
 
-  var idT = parseInt(idTipo);
-  var idE = parseInt(idEstado);
+  var idEm, idT, idE;
+  idEm = parseInt(idEmpresa);
+  idT = parseInt(idTipo);
+  idE = parseInt(idEstado);
 
-  if (isNaN(idT) || isNaN(idE) || nombre == "") {
+  if (isNaN(idEm) || isNaN(idT) || isNaN(idE) || nombre == "") {
     return res.status(400).json({ msg: "Bad Request. Please fill all fields" });
   }
-  try {
-    const connection = await getConnection();
-    await connection
-      .request()
-      .input("A", "U")
-      .input("id", req.params.id)
-      .input("nm", nombre)
-      .input("tp", idT)
-      .input("es", idE)
-      .query(querys.IUEntity);
-
-    res.json({ msg: "fields affected" })
+  if(idE == 1 || idE == 2){
+    try {
+      const connection = await getConnection();
+      await connection
+        .request()
+        .input("A", "U")
+        .input("id", idEm)
+        .input("nm", nombre)
+        .input("tp", idT)
+        .input("es", idE)
+        .query(querys.IUEntity);
+  
+      res.json({ msg: "fields affected" })
+    }
+    catch (error) {
+      res.status(500);
+      res.send(error.message);
+      console.error(error);
+    }
   }
-  catch (error) {
-    res.status(500);
-    res.send(error.message);
+  else{
+    return res.status(400).json({ msg: "Bad Request. Please estate active = 1 or inactive = 2" });
   }
 };
 
@@ -54,7 +62,6 @@ export const getCompanyByName = async (req, res) => {
     return res.status(400).json({ msg: "Bad Request. Please fill all field" });
   }
   var value = nombre + like;
-  console.log(value);
   try {
     const connection = await getConnection();
     const result = await connection

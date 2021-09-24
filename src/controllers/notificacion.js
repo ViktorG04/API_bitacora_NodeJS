@@ -13,5 +13,5 @@ export const sendEmailAppService = async(solicitud, correo, mensaje) =>{
         console.log("status send email "+response.status);
     } catch (error) {
         console.log(error);
-    }
+    } 
 };
