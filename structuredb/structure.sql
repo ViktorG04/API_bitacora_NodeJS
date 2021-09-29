@@ -170,13 +170,12 @@ GO
 GO
 ---validar login -----
 CREATE PROCEDURE UserLogin
-@corr varchar(30),
-@pass varchar(12)
+@corr varchar(30)
 AS
 	BEGIN
 		SELECT idUsuario, correo, pass, idRol, nombreCompleto, idEstado AS estado FROM usuario 
 		INNER JOIN personas ON personas.idEmpleado = usuario.idUsuario
-		WHERE correo = @corr AND pass = @pass;
+		WHERE correo = @corr;
 	END
 GO
 
@@ -516,13 +515,13 @@ AS
 	BEGIN
 		SELECT S.idSolicitud, FORMAT(S.fechayHoraVisita,'dd/MM/yyyy hh:mm tt') AS fechaVisita, S.idEstado, 
 		E.estado FROM solicitud AS S
-		INNER JOIN estado AS E ON S.idEstado = E.idEstado WHERE S.idUsuario = @id;
+		INNER JOIN estado AS E ON S.idEstado = E.idEstado WHERE S.idUsuario = @id ORDER BY idSolicitud DESC;
 	END
 	IF(@rol = 1 OR @rol = 4)
 	BEGIN
 		SELECT S.idSolicitud, FORMAT(S.fechayHoraVisita,'dd/MM/yyyy hh:mm tt') AS fechaVisita, S.idEstado, 
 		E.estado FROM solicitud AS S
-		INNER JOIN estado AS E ON S.idEstado = E.idEstado;
+		INNER JOIN estado AS E ON S.idEstado = E.idEstado ORDER BY idSolicitud DESC;
 	END
 GO
 

@@ -1,6 +1,6 @@
 import { createNewPerson, detalleEmployee } from "./persons.controller";
 import { createNewCompany } from "./companies.controller";
-import { sendEmailAppService } from "./notificacion";
+import { sendEmailAppService, fechFormat } from "./notificacion";
 import {
     searchSolicitud,
     listSolicitudes,
@@ -295,26 +295,6 @@ async function fechSolicitud(fecha) {
     return fecha;
 };
 
-//function format fech
-async function fechFormat(fecha) {
-    try {
-        var nuevaFecha;
-        fecha = fecha.split(" ");
-        if (fecha[0].indexOf("/") >= 1) {
-            nuevaFecha = fecha[0].split("/").reverse().join("-");
-            nuevaFecha = nuevaFecha + " ";
-        }
-        else {
-            nuevaFecha = fecha[0].split("-").reverse().join("-");
-            nuevaFecha = nuevaFecha + " ";
-        }
-        nuevaFecha = nuevaFecha + fecha[1];
-        return nuevaFecha;
-    } catch (error) {
-        console.error(error);
-    }
-};
-
 //send email to rrhh
 async function sendEmailRRHH(nombre, fecha, solicitud, estado) {
     var rrhhh, msj;
@@ -370,12 +350,6 @@ async function validarCapacidadVisitas(fecha, area, estado, solicitud) {
 
     totalP = resulTP['total'] + ingressPeople['total'];
     nuevaC = resultCA['capacidad'] - totalP;
-
-    console.log(resulTP['total']);
-    console.log(ingressPeople['total']);
-    console.log(totalP);
-    console.log(nuevaC);
-    console.log(resultCA['capacidad']);
 
     if ( totalP < resultCA['capacidad']) {
         notificacion = "Solicitud Aprobada, personas a ingresar para esa fecha son " +totalP+ " disponibilidad: " + nuevaC;

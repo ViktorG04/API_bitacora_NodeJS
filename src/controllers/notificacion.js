@@ -15,3 +15,26 @@ export const sendEmailAppService = async(solicitud, correo, mensaje) =>{
         console.log(error);
     } 
 };
+
+//function format fech
+export const fechFormat = async(fecha) =>{
+    try {
+        var nuevaFecha;
+        fecha = fecha.split(" ");
+        if (fecha[0].indexOf("/") >= 1) {
+            nuevaFecha = fecha[0].split("/").reverse().join("-");
+            nuevaFecha = nuevaFecha + " ";
+        }
+        else {
+            nuevaFecha = fecha[0].split("-").reverse().join("-");
+            nuevaFecha = nuevaFecha + " ";
+        }
+        
+        if( fecha[1] != null){
+            nuevaFecha = nuevaFecha + fecha[1];
+        }
+        return nuevaFecha;
+    } catch (error) {
+        console.error(error);
+    }
+};

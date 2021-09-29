@@ -21,4 +21,5 @@ export const querys = {
     postDSolicitud: 'EXEC IDSolicitud @sol, @per, @idf',
     postDIngreso: 'EXEC IIngreso @temp, @idDP',
     getCapacidad: 'EXEC capacidadIngress @A, @est, @area, @fech, @id',
+    IIncapacidad: 'EXEC IIncapacidad @rh, @emp, @fechI, @fechF, @est, @mot',
 };
