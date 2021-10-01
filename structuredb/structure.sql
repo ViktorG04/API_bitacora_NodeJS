@@ -10,7 +10,6 @@ rol varchar(20) not null,
 primary key(idRol));
 
 INSERT INTO rol(rol) VALUES('RRHH');
-INSERT INTO rol(rol) VALUES('jefe');
 INSERT INTO rol(rol) VALUES('empleado');
 INSERT INTO rol(rol) VALUES('Seguridad');
 
@@ -381,7 +380,7 @@ CREATE PROCEDURE IUUsers
 @action char(1),
 @user varchar(30),
 @corr varchar(30),
-@pass varchar(12),
+@pass varchar(60),
 @nom varchar(60),
 @doc varchar(20),
 @rol int,
@@ -511,13 +510,13 @@ CREATE PROCEDURE listSolicitudes
 @id int,
 @rol int
 AS
-	IF(@rol = 2 OR @rol = 3)
+	IF(@rol = 2)
 	BEGIN
 		SELECT S.idSolicitud, FORMAT(S.fechayHoraVisita,'dd/MM/yyyy hh:mm tt') AS fechaVisita, S.idEstado, 
 		E.estado FROM solicitud AS S
 		INNER JOIN estado AS E ON S.idEstado = E.idEstado WHERE S.idUsuario = @id ORDER BY idSolicitud DESC;
 	END
-	IF(@rol = 1 OR @rol = 4)
+	IF(@rol = 1 OR @rol = 3)
 	BEGIN
 		SELECT S.idSolicitud, FORMAT(S.fechayHoraVisita,'dd/MM/yyyy hh:mm tt') AS fechaVisita, S.idEstado, 
 		E.estado FROM solicitud AS S
@@ -607,12 +606,13 @@ CREATE PROCEDURE ISolicitud
 @user int,
 @fech datetime,
 @moti text,
-@area int
+@area int,
+@est int
 AS
 BEGIN
 	---insert solicitud---
 	INSERT INTO solicitud(idUsuario, fechaCreacion, fechayHoraVisita, motivo, idEstado, idArea)
-	VALUES (@user, GETDATE(), @fech, @moti, 3, @area);
+	VALUES (@user, GETDATE(), @fech, @moti, @est, @area);
 	SELECT @@IDENTITY as ID;
 END
 GO
@@ -655,6 +655,12 @@ AS
 	BEGIN
 		SELECT COUNT(idVisitante) AS total FROM solicitud AS S inner join detallesolicitud AS DS ON s.idSolicitud = DS.idSolicituDe
 		WHERE S.idEstado = @est and S.idArea = @area and CONVERT(VARCHAR(25), fechayHoraVisita, 126) LIKE @fech;
+	END
+	IF(@action = 'I')
+	BEGIN
+		SELECT COUNT(DS.idVisitante) AS total FROM solicitud AS S INNER JOIN detallesolicitud AS DS ON S.idSolicitud = DS.idSolicituDe 
+		INNER JOIN detalleingreso AS DI ON DI.idDetalle = DS.idDetalle WHERE S.idEstado = @est AND S.idArea = @area
+		AND CONVERT(VARCHAR(25), DI.fechaHoraIngreso, 126) LIKE @fech;
 	END
 	IF(@action = 'C')
 	BEGIN

@@ -23,15 +23,15 @@ export const fechFormat = async(fecha) =>{
         fecha = fecha.split(" ");
         if (fecha[0].indexOf("/") >= 1) {
             nuevaFecha = fecha[0].split("/").reverse().join("-");
-            nuevaFecha = nuevaFecha + " ";
+            nuevaFecha;
         }
         else {
             nuevaFecha = fecha[0].split("-").reverse().join("-");
-            nuevaFecha = nuevaFecha + " ";
+            nuevaFecha;
         }
         
         if( fecha[1] != null){
-            nuevaFecha = nuevaFecha + fecha[1];
+            nuevaFecha = nuevaFecha+ " " + fecha[1];
         }
         return nuevaFecha;
     } catch (error) {

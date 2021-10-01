@@ -80,7 +80,8 @@ export const createNewSolicitudEmployee = async (req, res) => {
 
     var idU = parseInt(idUsuario);
     var idA = parseInt(idArea);
-    var idP, idS, fecha, resultDetalle, nombre;
+    var idP, idS, fecha, resultDetalle, nombre, idE;
+    idE = 3;
 
     if (isNaN(idU) || isNaN(idA) || fechayHoraVisita == "" || motivo == "") {
         return res.status(400).json({ msg: "Bad Request. Please fill all fields" });
@@ -93,7 +94,7 @@ export const createNewSolicitudEmployee = async (req, res) => {
     }
 
     //add new solicitud
-    idS = await addSolicitud(idU, fecha, motivo, idA);
+    idS = await addSolicitud(idU, fecha, motivo, idA, idE);
     if (idS == null) {
         return res.status(400).json({ msg: "Bad Request. Error creating Solicitud" });
     }
@@ -119,12 +120,14 @@ export const createNewSolicitudEmployee = async (req, res) => {
 //add new solicitud for all people
 export const createNewSolicitudVisitas = async (req, res) => {
     const { idUsuario, idEmpresa, empresa, fechayHoraVisita, motivo, idTipoEmpresa, idArea, personas } = req.body;
-    var idU, idA, idEmp, idTip, idP, idS, fecha, resultDetalle, nombre;
+
+    var idU, idA, idEmp, idTip, idP, idS, fecha, resultDetalle, nombre, idE, capacidad;
 
     idU = parseInt(idUsuario);
     idA = parseInt(idArea);
     idEmp = parseInt(idEmpresa);
     idTip = parseInt(idTipoEmpresa);
+    idE = 4;
 
 
     if (isNaN(idU) || isNaN(idEmp) || empresa == "" || fechayHoraVisita == "" || motivo == "" || isNaN(idTip) ||
@@ -142,8 +145,15 @@ export const createNewSolicitudVisitas = async (req, res) => {
         return res.status(400).json({ msg: "Error with the time of solicitud" });
     }
 
+    //validate capacity of an office for that day
+    capacidad = await disponibilidadOficina(fecha, idA, idE, personas.length)
+    if (capacidad.indexOf('!') >= 1) {
+        return res.status(400).json({ msg: capacidad });
+    }
     //add new solicitud
-    idS = await addSolicitud(idU, fecha, motivo, idA);
+    idS = await addSolicitud(idU, fecha, motivo, idA, idE);
+
+    console.log(idS);
 
     if (idEmp == 0) {
         //add new company
@@ -166,12 +176,15 @@ export const createNewSolicitudVisitas = async (req, res) => {
         resultDetalle = await addDetalleSolicitud(idS, idP, idF);
     }
 
+    if (resultDetalle == null) {
+        return res.status(400).json({ msg: "Error with creating request" });
+    }
     //sen email to rrhh
     nombre = await detalleEmployee(idU, 'N');
     nombre = nombre['Nombre'];
     sendEmailRRHH(nombre, fechayHoraVisita, idS, "Creada!");
 
-    res.json({ resultDetalle });
+    res.json({ capacidad});
 };
 
 //insert temp of person
@@ -237,7 +250,7 @@ export const updateStateSolicitud = async (req, res) => {
     idR = idR['idRol'];
     datos = await dataSolicitud(idS, 'DS');
 
-    if (idNE == 8 & (idR == 1 || idR == 2 || idR == 3)) {
+    if (idNE == 8 & (idR == 1 || idR == 2)) {
         if (idEA == 5 || idEA == 7 || idEA == 8) {
             return res.status(400).json({ msg: "error al cancelar solicitud" });
         }
@@ -253,22 +266,22 @@ export const updateStateSolicitud = async (req, res) => {
             if (idNE == 4) {
                 capacidad = await validarCapacidadVisitas(datos['fecha'], datos['idArea'], idNE, idS);
                 if (capacidad.indexOf('!') >= 1) {
-                    return res.status(400).json({ msg: capacidad});
+                    return res.status(400).json({ msg: capacidad });
                 }
                 resultState = await updateSolicitudState(idS, idNE);
-                if(resultState == null){
+                if (resultState == null) {
                     return res.status(400).json({ msg: "error al actualizar estado a aprobado" });
                 }
                 sendEmailEmployee(datos['correo'], datos['fecha'], idS, idNE);
                 resultState = capacidad;
-            }else{
+            } else {
                 resultState = await updateSolicitudState(idS, idNE);
                 sendEmailEmployee(datos['correo'], datos['fecha'], idS, idNE);
             }
         } else {
             return res.status(400).json({ msg: "error no se puede Aprobar o Rechazar la solicitud actual" });
         }
-    } else if (idNE == 7 & (idR == 1 || idR == 4)) {
+    } else if (idNE == 7 & (idR == 1 || idR == 3)) {
         if (idEA == 6) {
             resultState = await updateSolicitudState(idS, idNE);
         }
@@ -288,7 +301,7 @@ async function fechSolicitud(fecha) {
     fecha = await fechFormat(fecha);
     fechaSQL = await dataSolicitud(0, 'TI');
     comparar = await fechFormat(fechaSQL['fecha']);
-    
+
     if (fecha <= comparar) {
         fecha = "0-00-0000";
     }
@@ -335,8 +348,9 @@ async function sendEmailEmployee(correo, fecha, solicitud, estado) {
     sendEmailAppService(v1, correo, msj);
 };
 
+//al momento de aceptar estado
 async function validarCapacidadVisitas(fecha, area, estado, solicitud) {
-    var resulTP, resultCA, ingressPeople,fecha, notificacion, totalP, nuevaC;
+    var resulTP, resultCA, resultTPA, ingressPeople, fecha, notificacion, totalP, nuevaC;
 
     fecha = await fechFormat(fecha);
     fecha = fecha.split(" ");
@@ -345,19 +359,50 @@ async function validarCapacidadVisitas(fecha, area, estado, solicitud) {
     resultCA = await capacidadVisitas('C', '', area, '');
     ingressPeople = await capacidadVisitas('P', '', '', '', solicitud);
     resulTP = await capacidadVisitas('S', estado, area, fecha);
+    resultTPA = await capacidadVisitas('I', 6, area, fecha);
 
-    console.log("")
-
-    totalP = resulTP['total'] + ingressPeople['total'];
+    totalP = resulTP['total'] + ingressPeople['total'] + resultTPA['total'];
     nuevaC = resultCA['capacidad'] - totalP;
 
-    if ( totalP < resultCA['capacidad']) {
-        notificacion = "Solicitud Aprobada, personas a ingresar para esa fecha son " +totalP+ " disponibilidad: " + nuevaC;
+    if (totalP < resultCA['capacidad']) {
+        notificacion = "Solicitud Aprobada, personas posibles a ingresar " + ingressPeople['total'] +
+            " personas dentro de la oficina" + resultTPA['total'] + " disponibilidad actual " + nuevaC;
+    }
+    else {
+        notificacion = "ERROR! la capacidad maxima para el ingreso a la oficina es: " + resultCA['capacidad'] +
+            " el total de personas actual aprobado a ingresar es de: " + resulTP['total'] +
+            " el total de personas dentro de la oficina es de " + resultTPA['total'] +
+            " y la solicitud actual es de " + ingressPeople['total'] + " personas";
+    }
+    return notificacion;
+};
+
+//disponibilidad antes de crear solicitud de visitas y ser aprobada
+async function disponibilidadOficina(fecha, area, estado, personas) {
+    var resulTP, resultCA, resultTPA, notificacion, totalP, nuevaC;
+
+    fecha = fecha.split(" ")[0] + "%";
+
+    //capacity by office
+    resultCA = await capacidadVisitas('C', '', area, '');
+
+    //people to enter on that date
+    resulTP = await capacidadVisitas('S', estado, area, fecha);
+
+    //people inside the office
+    resultTPA = await capacidadVisitas('I', 6, area, fecha);
+
+    totalP = resulTP['total'] + resultTPA['total'] + personas;
+    nuevaC = resultCA['capacidad'] - totalP;
+
+    if (totalP < resultCA['capacidad']) {
+        notificacion = "Solicitud Creada, personas posibles a ingresar " + personas +
+            " personas dentro de la oficina " + resultTPA['total'] + " disponibilidad actual " + nuevaC;
     }
     else {
         notificacion = "ERROR! la capacidad maxima para el ingreso a la oficina es: " + resultCA['capacidad']
-            + " el total de personas actual aprobado a ingresar es de: " + resulTP['total']+" y la solicitud actual es de "+ingressPeople['total']
-            +" personas";
+            + " el total de personas actual aprobado a ingresar es de: " + resulTP['total'] + " y la solicitud actual es de " + personas
+            + " personas a ingresar";
     }
     return notificacion;
 };

@@ -32,7 +32,7 @@ export const listSolicitudes = async(id, rol) =>{
 
 
 //function insert solicitud
-export const addSolicitud = async(idUser, fecha, motivo, area) =>{
+export const addSolicitud = async(idUser, fecha, motivo, area, estado) =>{
     try {
         const connection = await getConnection();
         const result = await connection
@@ -41,6 +41,7 @@ export const addSolicitud = async(idUser, fecha, motivo, area) =>{
             .input("fech", fecha)
             .input("mo", motivo)
             .input("area", area)
+            .input("est", estado)
             .query(querys.postSolicitud);
         return result.recordset[0]["ID"];
     } catch (error) {
@@ -112,7 +113,7 @@ export const dataSolicitud = async(id, action) =>{
     }
 };
 
-//
+//capacity of an office
 export const capacidadVisitas = async(action, estado, area, fecha, solicitud) =>{
     try {
         const connection = await getConnection();

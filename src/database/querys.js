@@ -17,7 +17,7 @@ export const querys = {
     getDetalleSolicitud: 'EXEC detalleSolicitudes @A, @id',
     getSolicitud: 'EXEC updateSolicitud @id, @est',
     getDataSolicitud: 'EXEC dataSolicitud @A, @id',
-    postSolicitud: 'EXEC ISolicitud @user, @fech, @mo, @area',
+    postSolicitud: 'EXEC ISolicitud @user, @fech, @mo, @area, @est',
     postDSolicitud: 'EXEC IDSolicitud @sol, @per, @idf',
     postDIngreso: 'EXEC IIngreso @temp, @idDP',
     getCapacidad: 'EXEC capacidadIngress @A, @est, @area, @fech, @id',
