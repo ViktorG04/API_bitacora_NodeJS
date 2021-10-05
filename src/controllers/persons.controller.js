@@ -65,29 +65,34 @@ export const updatePersonById = async (req, res) => {
   const { id, nombre, docIdentidad, idEmpresa, idEstado } = req.body;
 
   const A = 'U';
-  var idP = parseInt(id);
-  var idEm = parseInt(idEmpresa);
-  var idE = parseInt(idEstado);
+  var idP, idEm, idE;
+  idP = parseInt(id);
+  idEm = parseInt(idEmpresa);
+  idE = parseInt(idEstado);
 
   if (isNaN(idP) || isNaN(idEm) || isNaN(idE) || nombre == "" || docIdentidad == "") {
     return res.status(400).json({ msg: "Bad Request. Please fill all fields" });
   }
-
-  try {
-    const connection = await getConnection();
-    await connection
-      .request()
-      .input("A", A)
-      .input("nom", nombre)
-      .input("doc", docIdentidad)
-      .input("emp", idEm)
-      .input("est", idE)
-      .input("id", idP)
-      .query(querys.getPersons);
-    res.json({ msg: "fields affected" })
-  } catch (error) {
-    res.status(500);
-    res.send(error.message);
+  if (idE == 1 || idE == 2) {
+    try {
+      const connection = await getConnection();
+      await connection
+        .request()
+        .input("A", A)
+        .input("nom", nombre)
+        .input("doc", docIdentidad)
+        .input("emp", idEm)
+        .input("est", idE)
+        .input("id", idP)
+        .query(querys.getPersons);
+      res.json({ msg: "fields affected" })
+    } catch (error) {
+      res.status(500);
+      res.send(error.message);
+      console.error(error);
+    }
+  } else {
+    return res.status(400).json({ msg: "Bad Request. Please estate active = 1 or inactive = 2" });
   }
 };
 
@@ -131,7 +136,9 @@ export const getValidateDui = async (req, res) => {
       return res.status(200).json({ msg: "OK" });
     }
   } catch (error) {
-    error.message;
+    res.status(500);
+    res.send(error.message);
+    console.error(error);
   }
 };
 
@@ -143,7 +150,6 @@ export const getPersonByName = async (req, res) => {
     return res.status(400).json({ msg: "Bad Request. Please fill all field" });
   }
   var value = nombre + like;
-  console.log(value);
   try {
     const connection = await getConnection();
     const result = await connection
@@ -157,6 +163,7 @@ export const getPersonByName = async (req, res) => {
   } catch (error) {
     res.status(500);
     res.send(error.message);
+    console.error(error);
   }
 };
 

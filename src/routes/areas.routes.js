@@ -1,7 +1,7 @@
 import { Router } from 'express';
 
 import {
-    getAreas, getAreaById, createNewArea, updateAreaById
+    getAreas, getAreaById, createNewArea, updateAreaById, getCapacity
 } from '../controllers/areas.controller';
 
 const router = Router();
@@ -17,5 +17,8 @@ router.post("/areas", createNewArea);
 
 //update
 router.put("/areas", updateAreaById);
+
+//capacity in areas
+router.post("/areas/reportes", getCapacity);
 
 export default router;

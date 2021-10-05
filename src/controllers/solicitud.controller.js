@@ -1,6 +1,6 @@
 import { createNewPerson, detalleEmployee } from "./persons.controller";
 import { createNewCompany } from "./companies.controller";
-import { sendEmailAppService } from "./notificacion";
+import { sendEmailAppService, fechFormat } from "./notificacion";
 import {
     searchSolicitud,
     listSolicitudes,
@@ -8,7 +8,8 @@ import {
     addDetalleSolicitud,
     updateSolicitudState,
     insertTempPerson,
-    dataSolicitud
+    dataSolicitud,
+    capacidadVisitas
 } from "./solicitud.consults";
 
 //all solicitudes
@@ -75,13 +76,14 @@ export const getSolicitudById = async (req, res) => {
 
 //add new solicitud bye employee
 export const createNewSolicitudEmployee = async (req, res) => {
-    const { idUsuario, nombreCompleto, fechayHoraVisita, motivo, idArea } = req.body;
+    const { idUsuario, fechayHoraVisita, motivo, idArea } = req.body;
 
     var idU = parseInt(idUsuario);
     var idA = parseInt(idArea);
-    var idP, idS, fecha, resultDetalle;
+    var idP, idS, fecha, resultDetalle, nombre, idE;
+    idE = 3;
 
-    if (isNaN(idU) || isNaN(idA) || nombreCompleto == "" || fechayHoraVisita == "" || motivo == "") {
+    if (isNaN(idU) || isNaN(idA) || fechayHoraVisita == "" || motivo == "") {
         return res.status(400).json({ msg: "Bad Request. Please fill all fields" });
     }
 
@@ -92,7 +94,7 @@ export const createNewSolicitudEmployee = async (req, res) => {
     }
 
     //add new solicitud
-    idS = await addSolicitud(idU, fecha, motivo, idA);
+    idS = await addSolicitud(idU, fecha, motivo, idA, idE);
     if (idS == null) {
         return res.status(400).json({ msg: "Bad Request. Error creating Solicitud" });
     }
@@ -102,11 +104,15 @@ export const createNewSolicitudEmployee = async (req, res) => {
     idP = idP['idPersona'];
     var idF = 1;
 
+    //get name employee
+    nombre = await detalleEmployee(idU, 'N');
+    nombre = nombre['Nombre'];
+
     //add new detalleSolicitud
     resultDetalle = await addDetalleSolicitud(idS, idP, idF);
 
     //sen email to rrhh
-    sendEmailRRHH(nombreCompleto, fechayHoraVisita, idS, "Creada!");
+    sendEmailRRHH(nombre, fechayHoraVisita, idS, "Creada!");
 
     res.json({ resultDetalle });
 };
@@ -114,12 +120,14 @@ export const createNewSolicitudEmployee = async (req, res) => {
 //add new solicitud for all people
 export const createNewSolicitudVisitas = async (req, res) => {
     const { idUsuario, idEmpresa, empresa, fechayHoraVisita, motivo, idTipoEmpresa, idArea, personas } = req.body;
-    var idU, idA, idEmp, idTip, idP, idS, fecha, resultDetalle, nombre;
+
+    var idU, idA, idEmp, idTip, idP, idS, fecha, resultDetalle, nombre, idE, capacidad;
 
     idU = parseInt(idUsuario);
     idA = parseInt(idArea);
     idEmp = parseInt(idEmpresa);
     idTip = parseInt(idTipoEmpresa);
+    idE = 4;
 
 
     if (isNaN(idU) || isNaN(idEmp) || empresa == "" || fechayHoraVisita == "" || motivo == "" || isNaN(idTip) ||
@@ -137,8 +145,15 @@ export const createNewSolicitudVisitas = async (req, res) => {
         return res.status(400).json({ msg: "Error with the time of solicitud" });
     }
 
+    //validate capacity of an office for that day
+    capacidad = await disponibilidadOficina(fecha, idA, idE, personas.length)
+    if (capacidad.indexOf('!') >= 1) {
+        return res.status(400).json({ msg: capacidad });
+    }
     //add new solicitud
-    idS = await addSolicitud(idU, fecha, motivo, idA);
+    idS = await addSolicitud(idU, fecha, motivo, idA, idE);
+
+    console.log(idS);
 
     if (idEmp == 0) {
         //add new company
@@ -161,19 +176,23 @@ export const createNewSolicitudVisitas = async (req, res) => {
         resultDetalle = await addDetalleSolicitud(idS, idP, idF);
     }
 
+    if (resultDetalle == null) {
+        return res.status(400).json({ msg: "Error with creating request" });
+    }
     //sen email to rrhh
     nombre = await detalleEmployee(idU, 'N');
     nombre = nombre['Nombre'];
     sendEmailRRHH(nombre, fechayHoraVisita, idS, "Creada!");
 
-    res.json({ resultDetalle });
+    res.json({ capacidad});
 };
 
 //insert temp of person
 export const createDetalleIngreso = async (req, res) => {
     const { idSolicitud, personas } = req.body;
 
-    var idS, idD, temp, resultDeIngreso, resultCreation, idEA, msj;
+    var idS, idD, temp, resultDeIngreso, idEA, msj;
+    var resultCreation = 0;
 
     idS = parseInt(idSolicitud);
 
@@ -186,22 +205,23 @@ export const createDetalleIngreso = async (req, res) => {
         temp = parseFloat(personas[i]["temperatura"]);
 
         if (isNaN(idD) || isNaN(temp) || temp == 0) {
-            return res.status(400).json({ msg: "Bad Request. Please fill all fields" });
+            return res.status(400).json({ msg: "Bad Request. Please fill all fields people" });
         }
-
+        if (temp >= 37.00) {
+            return res.status(400).json({ msg: "Bad Request. notify human resources temperature of idDetalle:" + idD + " above 37 °" });
+        }
         //call function
         resultDeIngreso = await insertTempPerson(temp, idD);
         if (resultDeIngreso == 'OK') {
-            resultCreation = resultCreation + i;
+            resultCreation = resultCreation + 1;
         }
     };
-
     if (resultCreation != personas.length) {
         return res.status(400).json({ msg: "Bad Request. Error creating DetalleIngreso" });
     }
 
     idEA = await dataSolicitud(idS, 'ES');
-    if (idEA['Actual'] == 3) {
+    if (idEA['Actual'] == 4) {
         //solicitud status in progress
         updateSolicitudState(idS, 6);
     }
@@ -214,7 +234,7 @@ export const createDetalleIngreso = async (req, res) => {
 export const updateStateSolicitud = async (req, res) => {
     const { idUsuario, idSolicitud, idEstado } = req.body;
 
-    var idU, idR, idS, idNE, idEA, datos, resultState;
+    var idU, idR, idS, idNE, idEA, datos, resultState, capacidad;
 
     idU = parseInt(idUsuario);
     idS = parseInt(idSolicitud);
@@ -226,15 +246,16 @@ export const updateStateSolicitud = async (req, res) => {
 
     idEA = await dataSolicitud(idS, 'ES');
     idEA = idEA['Actual'];
-
     idR = await detalleEmployee(idU, 'R');
     idR = idR['idRol'];
-
     datos = await dataSolicitud(idS, 'DS');
 
-    if (idNE == 8 & (idR == 1 || idR == 2 || idR == 3)) {
-        if (idEA == 5 || idEA == 6 || idEA == 7 || idEA == 8) {
+    if (idNE == 8 & (idR == 1 || idR == 2)) {
+        if (idEA == 5 || idEA == 7 || idEA == 8) {
             return res.status(400).json({ msg: "error al cancelar solicitud" });
+        }
+        else if (idEA == 6) {
+            return res.status(400).json({ msg: "error al cancelar solicitud status en progreso" });
         } else {
             resultState = await updateSolicitudState(idS, idNE);
             sendEmailRRHH(datos['nombreCompleto'], datos['fecha'], idS, "Cancelada");
@@ -242,15 +263,27 @@ export const updateStateSolicitud = async (req, res) => {
         }
     } else if (idR == 1 & (idNE == 4 || idNE == 5)) {
         if (idEA == 3) {
-            resultState = await updateSolicitudState(idS, idNE);
-            sendEmailEmployee(datos['correo'], datos['fecha'], idS, idNE);
+            if (idNE == 4) {
+                capacidad = await validarCapacidadVisitas(datos['fecha'], datos['idArea'], idNE, idS);
+                if (capacidad.indexOf('!') >= 1) {
+                    return res.status(400).json({ msg: capacidad });
+                }
+                resultState = await updateSolicitudState(idS, idNE);
+                if (resultState == null) {
+                    return res.status(400).json({ msg: "error al actualizar estado a aprobado" });
+                }
+                sendEmailEmployee(datos['correo'], datos['fecha'], idS, idNE);
+                resultState = capacidad;
+            } else {
+                resultState = await updateSolicitudState(idS, idNE);
+                sendEmailEmployee(datos['correo'], datos['fecha'], idS, idNE);
+            }
         } else {
             return res.status(400).json({ msg: "error no se puede Aprobar o Rechazar la solicitud actual" });
         }
-    } else if (idNE == 7 & (idR == 1 & idR == 4)) {
+    } else if (idNE == 7 & (idR == 1 || idR == 3)) {
         if (idEA == 6) {
             resultState = await updateSolicitudState(idS, idNE);
-            console.log("solicitud finalizada");
         }
         else {
             return res.status(400).json({ msg: "error no se puede dar por Finalizada la solicitud actual" });
@@ -266,39 +299,19 @@ export const updateStateSolicitud = async (req, res) => {
 async function fechSolicitud(fecha) {
     var fechaSQL, comparar;
     fecha = await fechFormat(fecha);
-
     fechaSQL = await dataSolicitud(0, 'TI');
     comparar = await fechFormat(fechaSQL['fecha']);
 
-    if (fecha < comparar) {
+    if (fecha <= comparar) {
         fecha = "0-00-0000";
     }
     return fecha;
 };
 
-//function format fech
-async function fechFormat(fecha) {
-    try {
-        var nuevaFecha;
-        fecha = fecha.split(" ");
-        if (fecha[0].indexOf("/") >= 1) {
-            nuevaFecha = fecha[0].split("/").reverse().join("-");
-            nuevaFecha = nuevaFecha + " ";
-        }
-        else {
-            nuevaFecha = fecha[0].split("-").reverse().join("-");
-            nuevaFecha = nuevaFecha + " ";
-        }
-        nuevaFecha = nuevaFecha + fecha[1];
-        return nuevaFecha;
-    } catch (error) {
-        console.error(error);
-    }
-};
-
 //send email to rrhh
 async function sendEmailRRHH(nombre, fecha, solicitud, estado) {
     var rrhhh, msj;
+    var v1 = "Solicitud";
     if (estado == "Creada!") {
         msj = "Hola Administrador, Queremos comentarle que " + nombre +
             " ha creado la solicitud N°" + solicitud + " para el ingreso a la oficina el dia " + fecha;
@@ -306,15 +319,17 @@ async function sendEmailRRHH(nombre, fecha, solicitud, estado) {
         msj = "Hola Administrador, Queremos comentarle que " + nombre +
             " ha cancelado la solicitud N°" + solicitud + " para el ingreso a la oficina el dia " + fecha;
     }
+    v1 = v1 + " " + estado;
     rrhhh = await detalleEmployee(0, 'U');
     for (const i in rrhhh) {
-        sendEmailAppService(estado, rrhhh[i]['correo'], msj);
+        sendEmailAppService(v1, rrhhh[i]['correo'], msj);
     };
 };
 
 //send email to employee
 async function sendEmailEmployee(correo, fecha, solicitud, estado) {
     var msj;
+    var v1 = "Solicitud";
     if (estado == 4) {
         estado = "Aprobada";
         msj = "Notificando que su solicitud N°" + solicitud + " Ha sido " + estado + " con exito para el dia " + fecha;
@@ -329,5 +344,65 @@ async function sendEmailEmployee(correo, fecha, solicitud, estado) {
         msj = "Notificando que su solicitud N°" + solicitud + " Ha sido " + estado + " para el dia " + fecha +
             " Cualquier consulta contacte con Recursos Humanos";
     }
-    sendEmailAppService(estado, correo, msj);
+    v1 = v1 + " " + estado;
+    sendEmailAppService(v1, correo, msj);
+};
+
+//al momento de aceptar estado
+async function validarCapacidadVisitas(fecha, area, estado, solicitud) {
+    var resulTP, resultCA, resultTPA, ingressPeople, fecha, notificacion, totalP, nuevaC;
+
+    fecha = await fechFormat(fecha);
+    fecha = fecha.split(" ");
+    fecha = fecha[0] + "%";
+
+    resultCA = await capacidadVisitas('C', '', area, '');
+    ingressPeople = await capacidadVisitas('P', '', '', '', solicitud);
+    resulTP = await capacidadVisitas('S', estado, area, fecha);
+    resultTPA = await capacidadVisitas('I', 6, area, fecha);
+
+    totalP = resulTP['total'] + ingressPeople['total'] + resultTPA['total'];
+    nuevaC = resultCA['capacidad'] - totalP;
+
+    if (totalP < resultCA['capacidad']) {
+        notificacion = "Solicitud Aprobada, personas posibles a ingresar " + ingressPeople['total'] +
+            " personas dentro de la oficina" + resultTPA['total'] + " disponibilidad actual " + nuevaC;
+    }
+    else {
+        notificacion = "ERROR! la capacidad maxima para el ingreso a la oficina es: " + resultCA['capacidad'] +
+            " el total de personas actual aprobado a ingresar es de: " + resulTP['total'] +
+            " el total de personas dentro de la oficina es de " + resultTPA['total'] +
+            " y la solicitud actual es de " + ingressPeople['total'] + " personas";
+    }
+    return notificacion;
+};
+
+//disponibilidad antes de crear solicitud de visitas y ser aprobada
+async function disponibilidadOficina(fecha, area, estado, personas) {
+    var resulTP, resultCA, resultTPA, notificacion, totalP, nuevaC;
+
+    fecha = fecha.split(" ")[0] + "%";
+
+    //capacity by office
+    resultCA = await capacidadVisitas('C', '', area, '');
+
+    //people to enter on that date
+    resulTP = await capacidadVisitas('S', estado, area, fecha);
+
+    //people inside the office
+    resultTPA = await capacidadVisitas('I', 6, area, fecha);
+
+    totalP = resulTP['total'] + resultTPA['total'] + personas;
+    nuevaC = resultCA['capacidad'] - totalP;
+
+    if (totalP < resultCA['capacidad']) {
+        notificacion = "Solicitud Creada, personas posibles a ingresar " + personas +
+            " personas dentro de la oficina " + resultTPA['total'] + " disponibilidad actual " + nuevaC;
+    }
+    else {
+        notificacion = "ERROR! la capacidad maxima para el ingreso a la oficina es: " + resultCA['capacidad']
+            + " el total de personas actual aprobado a ingresar es de: " + resulTP['total'] + " y la solicitud actual es de " + personas
+            + " personas a ingresar";
+    }
+    return notificacion;
 };

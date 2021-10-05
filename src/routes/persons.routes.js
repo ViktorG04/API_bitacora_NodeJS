@@ -19,9 +19,9 @@ router.get("/persons/:id", getPersonById);
 router.put("/persons", updatePersonById);
 
 //validate doc identity
-router.get("/persons/dui", getValidateDui);
+router.post("/persons/validate/dui", getValidateDui);
 
 //search person by document
-router.get("/persons/name", getPersonByName);
+router.post("/persons/validate/name", getPersonByName);
 
 export default router;

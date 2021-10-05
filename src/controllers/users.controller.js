@@ -1,4 +1,5 @@
 import { getConnection, querys } from "../database";
+import { sendEmailAppService } from "./notificacion"
 import bcrypt from "bcryptjs";
 
 //insert employee
@@ -9,7 +10,7 @@ export const createNewUser = async (req, res) => {
   const idE = 1;
   const idEm = 1;
 
-  var idR, user, passRandom, pass, result;
+  var idR, user, passRandom, pass, result, mensaje;
 
   idR = parseInt(idRol);
 
@@ -39,17 +40,21 @@ export const createNewUser = async (req, res) => {
   
   //insert users
   result = await IUEmployee(0, "I", user, correo, pass, nombre, dui, idR, idEm, idE);
-  if (result != null) {
-    result = { correo: correo, password: passRandom };
+  if (result == null) {
+    return res.status(400).json({ msg: "Bad Request. error creating user" });
   }
   res.json(result);
+
+  mensaje = "Nuevo usuario creado para"+correo+" y password: "+passRandom
+  sendEmailAppService("Usuario Creado!", correo, mensaje);
 };
+
 
 //update Employee
 export const updateUserById = async (req, res) => {
   const { idUsuario, nombre, dui, correo, idRol, password } = req.body;
 
-  var idU, idR, pass, result, user;
+  var idU, idR, pass, result, user, mensaje;
 
   idU = parseInt(idUsuario);
   idR = parseInt(idRol);
@@ -67,10 +72,11 @@ export const updateUserById = async (req, res) => {
     }
     //password encrypt
     pass = bcrypt.hashSync(password, 8);
+
   }else{
     pass = result['pass'];
   }
-
+ 
   if(dui != result['docIdentidad'] & correo != result['dcorreo'] ){
     //validate docIdentity
     result = await ValidarCampo(dui, "D");
@@ -92,7 +98,13 @@ export const updateUserById = async (req, res) => {
   result = await IUEmployee(idU,'U',user,correo,pass,nombre, dui,idR);
   
   res.json({ result});
+
+  if(password !="" & result != null){
+    mensaje = "Su nueva contraseña es: "+password+" favor ingresar al siguiente link para ingresar"
+    sendEmailAppService("Password Actualizado!", correo, mensaje);
+  }
 };
+
 
 //validate doc identity and email
 async function ValidarCampo(valor, Action) {

@@ -7,7 +7,7 @@ const router = Router();
 
 //all
 router.get("/companies", getCompanies);
-router.put("/companies/:id", updateCompanyById);
+router.put("/companies", updateCompanyById);
 router.get("/companies/name", getCompanyByName);
 
 
