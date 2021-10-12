@@ -4,43 +4,47 @@ import { sendEmailAppService, fechFormat } from "./notificacion";
 import {
     searchSolicitud,
     listSolicitudes,
-    addSolicitud,
     addDetalleSolicitud,
+    crupResFormulario,
     updateSolicitudState,
     insertTempPerson,
     dataSolicitud,
-    capacidadVisitas
+    capacidadVisitas,
+    insertUpdateSolicitud
 } from "./solicitud.consults";
 
 //all solicitudes
 export const getSolicitudes = async (req, res) => {
     var id = req.params.id;
-    var allSolicitudes, idR;
+    var allSolicitudes, idR, solicitudes;
     idR = await detalleEmployee(id, 'R');
     idR = idR['idRol'];
     allSolicitudes = await listSolicitudes(id, idR);
 
-    if (idR == 4) {
+    if (idR == 3) {
         for (const i in allSolicitudes) {
-            console.log(allSolicitudes[i]['estado']);
+
             if (allSolicitudes[i]['estado'] == "En Progreso") {
             }
             else if (allSolicitudes[i]['estado'] == "Aprobado") {
+            }
+            else if (allSolicitudes[i]['estado'] == "Finalizado") {
             }
             else {
                 delete allSolicitudes[i];
             }
         }
     };
+    solicitudes = allSolicitudes.filter(function (e) { return e != null; });
 
     //enviar json
-    res.json(allSolicitudes);
+    res.json(solicitudes);
 };
 
 //solicitud bye id
 export const getSolicitudById = async (req, res) => {
     var id = req.params.id;
-    var resultSolicitud, resultDetalle, resultIngreso;
+    var resultSolicitud, resultDetalle, resultIngreso, resultFormulario;
 
     //get details solicitud
     resultSolicitud = await searchSolicitud(id, "BS");
@@ -53,7 +57,7 @@ export const getSolicitudById = async (req, res) => {
     if (resultIngreso.length > 0) {
         for (const i in resultDetalle) {
             for (const x in resultIngreso) {
-                if (resultDetalle[i]["idDetalle"] == resultIngreso[x]['idDetalle']) {
+                if (resultDetalle[i]['idDetalle'] == resultIngreso[x]['idDetalle']) {
                     resultDetalle[i].temperatura = resultIngreso[x]['temperatura'];
                     resultDetalle[i].horaIngreso = resultIngreso[x]['fechaHoraIngreso'];
                     resultDetalle[i].horaSalida = resultIngreso[x]['fechaHoraSalida'];
@@ -62,13 +66,23 @@ export const getSolicitudById = async (req, res) => {
         };
     };
 
-    resultSolicitud[0].empresa = resultDetalle[0]["empresa"];
+    //add name company
+    resultSolicitud[0].empresa = resultDetalle[0]['empresa'];
 
+    //add answers
     for (const i in resultDetalle) {
-        delete resultDetalle[i]["empresa"];
-    };
+        delete resultDetalle[i]['empresa'];
+        resultFormulario = await crupResFormulario('B', resultDetalle[i]['idDetalle'], '', '');
+        resultDetalle[i].respuestas = resultFormulario;
+    }
 
-    resultSolicitud[0].personas = resultDetalle;
+    if(resultDetalle.length == 1){
+        resultSolicitud[0].idDetalle = resultDetalle[0]["idDetalle"];
+        resultSolicitud[0].dui = resultDetalle[0]['docIdentidad'];
+        resultSolicitud[0].respuestas = resultDetalle[0]['respuestas'];
+    }else{
+        resultSolicitud[0].personas = resultDetalle;
+    }
 
     //send json
     res.json(resultSolicitud[0]);
@@ -76,14 +90,14 @@ export const getSolicitudById = async (req, res) => {
 
 //add new solicitud bye employee
 export const createNewSolicitudEmployee = async (req, res) => {
-    const { idUsuario, fechayHoraVisita, motivo, idArea } = req.body;
+    const { idUsuario, fechayHoraVisita, motivo, idArea, respuestas } = req.body;
 
     var idU = parseInt(idUsuario);
     var idA = parseInt(idArea);
-    var idP, idS, fecha, resultDetalle, nombre, idE;
+    var idP, idS, fecha, idDetalle, nombre, idE, capacidad, resultFormulario;
     idE = 3;
 
-    if (isNaN(idU) || isNaN(idA) || fechayHoraVisita == "" || motivo == "") {
+    if (isNaN(idU) || isNaN(idA) || fechayHoraVisita == "" || motivo == "" || respuestas.length == 0) {
         return res.status(400).json({ msg: "Bad Request. Please fill all fields" });
     }
 
@@ -93,8 +107,14 @@ export const createNewSolicitudEmployee = async (req, res) => {
         return res.status(400).json({ msg: "Error with the time of solicitud" });
     }
 
+    //validate capacity of an office for that day
+    capacidad = await disponibilidadOficina('I',fecha, idA,'4',1)
+    if (capacidad.indexOf('!') >= 1) {
+        return res.status(400).json({ msg: capacidad });
+    }
+
     //add new solicitud
-    idS = await addSolicitud(idU, fecha, motivo, idA, idE);
+    idS = await insertUpdateSolicitud('I', idU, fecha, motivo, idA, idE);
     if (idS == null) {
         return res.status(400).json({ msg: "Bad Request. Error creating Solicitud" });
     }
@@ -102,33 +122,39 @@ export const createNewSolicitudEmployee = async (req, res) => {
     //get idperson of user
     idP = await detalleEmployee(idU, 'I');
     idP = idP['idPersona'];
-    var idF = 1;
 
     //get name employee
     nombre = await detalleEmployee(idU, 'N');
-    nombre = nombre['Nombre'];
+    nombre = nombre['nombre'];
 
     //add new detalleSolicitud
-    resultDetalle = await addDetalleSolicitud(idS, idP, idF);
+    idDetalle = await addDetalleSolicitud(idS, idP);
+
+    for (const i in respuestas) {
+        resultFormulario = await crupResFormulario('I', idDetalle, i, respuestas[i]);
+    }
 
     //sen email to rrhh
     sendEmailRRHH(nombre, fechayHoraVisita, idS, "Creada!");
 
-    res.json({ resultDetalle });
+    if (idDetalle == null & resultFormulario == null) {
+        return res.status(400).json({ msg: "Bad Request. Error creating Solicitud" });
+    }
+
+    res.json(capacidad);
 };
 
 //add new solicitud for all people
 export const createNewSolicitudVisitas = async (req, res) => {
-    const { idUsuario, idEmpresa, empresa, fechayHoraVisita, motivo, idTipoEmpresa, idArea, personas } = req.body;
+    const { idUsuario, idEmpresa, empresa, fechayHoraVisita, motivo, idTipoEmpresa, idArea, personas} = req.body;
 
-    var idU, idA, idEmp, idTip, idP, idS, fecha, resultDetalle, nombre, idE, capacidad;
+    var idU, idA, idEmp, idTip, idP, idS, fecha, idDetalle, nombre, idE, capacidad, insertFormulario;
 
     idU = parseInt(idUsuario);
     idA = parseInt(idArea);
     idEmp = parseInt(idEmpresa);
     idTip = parseInt(idTipoEmpresa);
     idE = 4;
-
 
     if (isNaN(idU) || isNaN(idEmp) || empresa == "" || fechayHoraVisita == "" || motivo == "" || isNaN(idTip) ||
         isNaN(idA) || personas.length == 0) {
@@ -146,14 +172,12 @@ export const createNewSolicitudVisitas = async (req, res) => {
     }
 
     //validate capacity of an office for that day
-    capacidad = await disponibilidadOficina(fecha, idA, idE, personas.length)
+    capacidad = await disponibilidadOficina('I', fecha, idA, idE, personas.length)
     if (capacidad.indexOf('!') >= 1) {
         return res.status(400).json({ msg: capacidad });
     }
     //add new solicitud
-    idS = await addSolicitud(idU, fecha, motivo, idA, idE);
-
-    console.log(idS);
+    idS = await insertUpdateSolicitud('I',idU, fecha, motivo, idA, idE);
 
     if (idEmp == 0) {
         //add new company
@@ -171,20 +195,23 @@ export const createNewSolicitudVisitas = async (req, res) => {
         } else {
             idP = personas[i]["idPersona"];
         }
-        var idF = 1;
         //add new detalleSolicitud
-        resultDetalle = await addDetalleSolicitud(idS, idP, idF);
+        idDetalle = await addDetalleSolicitud(idS, idP);
+
+        for(let numPregunta = 1; numPregunta <=3; numPregunta ++){
+            insertFormulario = await crupResFormulario('I', idDetalle, numPregunta, 'N');
+        }
     }
 
-    if (resultDetalle == null) {
+    if (idDetalle == null & insertFormulario == null) {
         return res.status(400).json({ msg: "Error with creating request" });
     }
     //sen email to rrhh
     nombre = await detalleEmployee(idU, 'N');
-    nombre = nombre['Nombre'];
+    nombre = nombre['nombre'];
     sendEmailRRHH(nombre, fechayHoraVisita, idS, "Creada!");
 
-    res.json({ capacidad});
+    res.json({ capacidad });
 };
 
 //insert temp of person
@@ -230,6 +257,42 @@ export const createDetalleIngreso = async (req, res) => {
     res.json({ msj });
 };
 
+//update data solicitud
+export const updateValuesSolicitud = async (req, res) =>{
+    const {idSolicitud, fechaVisita, motivo, idArea} = req.body;
+
+    var idS, idA, fecha, capacidad, ingressPeople, resultUpdate;
+
+    idS = parseInt(idSolicitud);
+    idA = parseInt(idArea);
+
+    if(isNaN(idS) || isNaN(idA) || fechaVisita == "" || motivo == ""){
+        return res.status(400).json({ msg: "Bad Request. Please fill all fields" });
+    }
+
+    fecha = await fechSolicitud(fechaVisita);
+    if (fecha == '0-00-0000') {
+        return res.status(400).json({ msg: "Error with the time of solicitud" });
+    }
+
+    //total number of people in the request
+    ingressPeople = await capacidadVisitas('P', '', '', '', idS);
+
+    //validate capacity of an office for that day
+    capacidad = await disponibilidadOficina('U', fecha, idA,'4', ingressPeople['total'])
+    if (capacidad.indexOf('!') >= 1) {
+        return res.status(400).json({ msg: capacidad });
+    }
+    
+    resultUpdate = await insertUpdateSolicitud('U',0, fecha, motivo, idA, idS)
+
+    if(resultUpdate == null){
+        return res.status(400).json({ msg: "Error updating of solicitud" });
+    }
+
+    res.json(capacidad);
+};
+
 //update state solicitud
 export const updateStateSolicitud = async (req, res) => {
     const { idUsuario, idSolicitud, idEstado } = req.body;
@@ -264,6 +327,7 @@ export const updateStateSolicitud = async (req, res) => {
     } else if (idR == 1 & (idNE == 4 || idNE == 5)) {
         if (idEA == 3) {
             if (idNE == 4) {
+
                 capacidad = await validarCapacidadVisitas(datos['fecha'], datos['idArea'], idNE, idS);
                 if (capacidad.indexOf('!') >= 1) {
                     return res.status(400).json({ msg: capacidad });
@@ -378,9 +442,8 @@ async function validarCapacidadVisitas(fecha, area, estado, solicitud) {
 };
 
 //disponibilidad antes de crear solicitud de visitas y ser aprobada
-async function disponibilidadOficina(fecha, area, estado, personas) {
-    var resulTP, resultCA, resultTPA, notificacion, totalP, nuevaC;
-
+async function disponibilidadOficina(action, fecha, area, estado, personas) {
+    var resulTP, resultCA, resultTPA, notificacion, solicitud, totalP, nuevaC;
     fecha = fecha.split(" ")[0] + "%";
 
     //capacity by office
@@ -396,8 +459,15 @@ async function disponibilidadOficina(fecha, area, estado, personas) {
     nuevaC = resultCA['capacidad'] - totalP;
 
     if (totalP < resultCA['capacidad']) {
-        notificacion = "Solicitud Creada, personas posibles a ingresar " + personas +
-            " personas dentro de la oficina " + resultTPA['total'] + " disponibilidad actual " + nuevaC;
+     
+        if(action != 'I'){
+            solicitud = "Solicitud Actualizada ";
+        }else{
+            solicitud = "Solicitud Creada "; 
+        }
+
+        notificacion = solicitud+"personas posibles a ingresar " + personas +
+        " personas dentro de la oficina " + resultTPA['total'] + " disponibilidad actual " + nuevaC;
     }
     else {
         notificacion = "ERROR! la capacidad maxima para el ingreso a la oficina es: " + resultCA['capacidad']

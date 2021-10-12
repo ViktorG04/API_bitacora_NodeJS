@@ -9,11 +9,6 @@ idRol int not null IDENTITY(1,1),
 rol varchar(20) not null,
 primary key(idRol));
 
-INSERT INTO rol(rol) VALUES('RRHH');
-INSERT INTO rol(rol) VALUES('empleado');
-INSERT INTO rol(rol) VALUES('Seguridad');
-
-
 IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[estado]') AND type in (N'U'))
 DROP TABLE [dbo].[estado]
 
@@ -21,15 +16,6 @@ create table estado(
 idEstado int not null IDENTITY(1,1),
 estado varchar(12) not null,
 primary key(idEstado));
-
-INSERT INTO estado(estado) VALUES('Activo');
-INSERT INTO estado(estado) VALUES('Inactivo');
-INSERT INTO estado(estado) VALUES('Pendiente');
-INSERT INTO estado(estado) VALUES('Aprobado');
-INSERT INTO estado(estado) VALUES('Rechazado');
-INSERT INTO estado(estado) VALUES('En Progreso');
-INSERT INTO estado(estado) VALUES('Finalizado');
-INSERT INTO estado(estado) VALUES('Cancelado');
 
 IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[areas]') AND type in (N'U'))
 DROP TABLE [dbo].[areas]
@@ -54,9 +40,6 @@ create table usuario(
  primary key(idUsuario),
  foreign key(idRol) references rol(idRol));
 
- Insert into usuario(usuario, correo, pass, idRol)
- values ('admin', 'bitacoraingress@outlook.com',  '$2a$08$UFLfAxxnC7TmVVYWLvO2M.PwdtGtAGpQPhYlK6uLW64XULl.7jea2', '1');
-
  IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[tipov]') AND type in (N'U'))
 DROP TABLE [dbo].[tipov]
 
@@ -64,11 +47,6 @@ create table tipov(
 idTipo int not null IDENTITY(1,1),
 tipo varchar(20) not null
 primary key(idTipo));
-
-INSERT INTO tipov(tipo) VALUES('Interno');
-INSERT INTO tipov(tipo) VALUES('Cliente');
-INSERT INTO tipov(tipo) VALUES('Proveedor');
-INSERT INTO tipov(tipo) VALUES('Particular');
 
 IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[empresa]') AND type in (N'U'))
 DROP TABLE [dbo].[empresa]
@@ -81,8 +59,6 @@ idEstado int not null,
 primary key(idEmpresa),
 foreign key(idTipo) references tipov(idTipo),
 foreign Key(idEstado) references estado(idEstado));
-
-INSERT INTO empresa(nombre, idTipo, idEstado) VALUES('Tecoloco S.A de C.V', 1, 1);
 
  IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[personas]') AND type in (N'U'))
 DROP TABLE [dbo].[personas]
@@ -100,26 +76,9 @@ foreign key(idEmpresa) references empresa(idEmpresa),
 foreign key(idEmpleado) references usuario(idUsuario),
 foreign key(idEstado) references estado(idEstado));
 
-INSERT INTO personas(nombreCompleto, docIdentidad, idEmpresa, idEmpleado, idEstado, fechayHoraCreacion)
-VALUES('usuario por defecto', '0616041291-1', 1, 1, 1, SYSDATETIMEOffset());
-
 IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[preguntas]') AND type in (N'U'))
 DROP TABLE [dbo].[preguntas]
 
-create table preguntas(
-idPregunta int not null IDENTITY(1,1),
-descripcion text not null
-primary key(idPregunta));
-
-IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[formulario]') AND type in (N'U'))
-DROP TABLE [dbo].[formulario]
-
-create table formulario(
-idFormulario int not null IDENTITY(1,1),
-idPregunta int not null,
-respuesta char(1)
-primary key(idFormulario),
-foreign key(idPregunta) references preguntas(idPregunta));
 
 IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[solicitud]') AND type in (N'U'))
 DROP TABLE [dbo].[solicitud]
@@ -144,11 +103,9 @@ create table detallesolicitud(
 idDetalle int not null IDENTITY(1,1),
 idSolicituDe int not null,
 idVisitante int not null,
-idFormulario int not null,
 primary key(idDetalle),
 foreign key(idSolicituDe) references solicitud(idSolicitud),
-foreign key(idVisitante) references personas(idPersona),
-foreign key(idFormulario) references formulario(idFormulario));
+foreign key(idVisitante) references personas(idPersona));
 
 IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[detalleingreso]') AND type in (N'U'))
 DROP TABLE [dbo].[detalleingreso]
@@ -161,6 +118,38 @@ temperatura float not null,
 idDetalle int not null,
 primary key(idIngreso),
 foreign key(idDetalle) references detallesolicitud(idDetalle));
+
+create table preguntas(
+idPregunta int not null IDENTITY(1,1),
+descripcion text not null
+primary key(idPregunta));
+
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[formulario]') AND type in (N'U'))
+DROP TABLE [dbo].[formulario]
+
+create table formulario(
+idFormulario int not null IDENTITY(1,1),
+idDetaSolicitud int not null, 
+idPregunta int not null,
+respuesta char(1)
+primary key(idFormulario),
+foreign key(idPregunta) references preguntas(idPregunta),
+foreign key(idDetaSolicitud) references detallesolicitud(idDetalle));
+
+
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[incapacidad]') AND type in (N'U'))
+DROP TABLE [dbo].[incapacidad]
+
+create table incapacidad(
+idIncapacidad int not null IDENTITY(1,1),
+numIncapacidad int not null,
+idEmpleado int not null,
+motivo text,
+fechaInicio date not null,
+fechaFin date not null,
+primary key(idIncapacidad),
+foreign key(idEmpleado) references usuario(idUsuario));
+
 
 GO
 
@@ -223,7 +212,7 @@ AS
 	END
 	IF(@action = 'N')
 	BEGIN
-		SELECT nombreCompleto FROM personas WHERE idEmpleado = @id
+		SELECT nombreCompleto AS nombre FROM personas WHERE idEmpleado = @id
 	END
 	IF(@action = 'B')
 	BEGIN
@@ -513,14 +502,17 @@ AS
 	IF(@rol = 2)
 	BEGIN
 		SELECT S.idSolicitud, FORMAT(S.fechayHoraVisita,'dd/MM/yyyy hh:mm tt') AS fechaVisita, S.idEstado, 
-		E.estado FROM solicitud AS S
+		E.estado, motivo, idArea FROM solicitud AS S
 		INNER JOIN estado AS E ON S.idEstado = E.idEstado WHERE S.idUsuario = @id ORDER BY idSolicitud DESC;
 	END
 	IF(@rol = 1 OR @rol = 3)
 	BEGIN
-		SELECT S.idSolicitud, FORMAT(S.fechayHoraVisita,'dd/MM/yyyy hh:mm tt') AS fechaVisita, S.idEstado, 
-		E.estado FROM solicitud AS S
-		INNER JOIN estado AS E ON S.idEstado = E.idEstado ORDER BY idSolicitud DESC;
+		SELECT S.idSolicitud, P.nombreCompleto, FORMAT(S.fechayHoraVisita,'dd/MM/yyyy hh:mm tt') AS fechaVisita, S.idEstado, 
+		E.estado, motivo, idArea FROM solicitud AS S
+		INNER JOIN estado AS E ON S.idEstado = E.idEstado
+		INNER JOIN usuario AS U ON S.idUsuario = U.idUsuario
+		INNER JOIN personas AS P ON U.idUsuario = P.idPersona
+		ORDER BY idSolicitud DESC;
 	END
 GO
 
@@ -532,7 +524,7 @@ AS
 	IF(@action = 'BS')
 	BEGIN
 		---search solicitud---
-		SELECT S.idSolicitud, P.nombreCompleto, FORMAT(S.fechayHoraVisita,'dd/MM/yyyy hh:mm tt') AS fechaVisita, S.motivo, A.descripcion AS Area, S.idEstado, E.estado FROM solicitud AS S
+		SELECT S.idSolicitud, U.idUsuario, P.nombreCompleto, FORMAT(S.fechayHoraVisita,'dd/MM/yyyy hh:mm tt') AS fechaVisita, S.motivo, A.descripcion AS Area, S.idEstado, E.estado FROM solicitud AS S
 		INNER JOIN estado AS E ON S.idEstado = E.idEstado
 		INNER JOIN areas AS A ON S.idArea = A.idArea
 		INNER JOIN usuario AS U ON U.idUsuario = S.idUsuario 
@@ -572,8 +564,8 @@ AS
 	END
 	IF(@action = 'DS')
 	BEGIN
-		SELECT U.correo, P.nombreCompleto, FORMAT(S.fechayHoraVisita, 'dd/MM/yyyy hh:mm tt') AS fecha  
-		FROM solicitud AS S INNER JOIN usuario AS U ON S.idUsuario = U.idUsuario
+		SELECT U.correo, P.nombreCompleto, FORMAT(S.fechayHoraVisita, 'dd/MM/yyyy hh:mm tt') AS fecha,
+		idArea FROM solicitud AS S INNER JOIN usuario AS U ON S.idUsuario = U.idUsuario
 		INNER JOIN personas AS P ON P.idEmpleado = U.idUsuario WHERE idSolicitud = @id;
 	END
 	IF(@action = 'TI')
@@ -603,30 +595,37 @@ GO
 
 GO
 CREATE PROCEDURE ISolicitud
+@action char(1),
 @user int,
 @fech datetime,
 @moti text,
 @area int,
 @est int
 AS
-BEGIN
-	---insert solicitud---
-	INSERT INTO solicitud(idUsuario, fechaCreacion, fechayHoraVisita, motivo, idEstado, idArea)
-	VALUES (@user, GETDATE(), @fech, @moti, @est, @area);
-	SELECT @@IDENTITY as ID;
-END
+	IF(@action = 'I')
+		BEGIN
+			---insert solicitud---
+			INSERT INTO solicitud(idUsuario, fechaCreacion, fechayHoraVisita, motivo, idEstado, idArea)
+			VALUES (@user, GETDATE(), @fech, @moti, @est, @area);
+			SELECT @@IDENTITY as ID;
+		END
+		IF(@action = 'U')
+		BEGIN
+			UPDATE solicitud SET fechayHoraVisita = @fech, motivo = @moti, idArea = @area
+			WHERE idSolicitud = @est
+		END
 GO
 
 GO
 CREATE PROCEDURE IDSolicitud
 @sol int,
-@per int,
-@idf int
+@per int
 AS
 BEGIN
 	---insert detalleSolicitud---
-	INSERT INTO detallesolicitud(idSolicituDe, idVisitante, idFormulario)
-	VALUES (@sol, @per, @idf);
+	INSERT INTO detallesolicitud(idSolicituDe, idVisitante)
+	VALUES (@sol, @per);
+	SELECT @@IDENTITY as ID;
 END
 GO
 
@@ -670,4 +669,65 @@ AS
 	BEGIN
 		SELECT COUNT(idVisitante) AS total FROM detallesolicitud WHERE idSolicituDe = @id;
 	END
+GO
+
+GO
+--STORE PROCEDURE OF FORMULARIO COVID
+CREATE PROCEDURE crupFormulario
+@action char(1),
+@idDS int,
+@idP int,
+@res char(1)
+AS
+	IF(@action = 'L')
+	BEGIN
+		SELECT * FROM formulario;
+	END
+	IF(@action = 'I')
+	BEGIN
+		INSERT INTO formulario(idDetaSolicitud, idPregunta, respuesta) VALUES (@idDS, @idP, @res);
+	END
+	IF(@action = 'B')
+	BEGIN 
+		SELECT  F.idPregunta AS Pregunta, F.respuesta FROM formulario AS F INNER JOIN detallesolicitud AS DS
+		ON F.idDetaSolicitud = DS.idDetalle WHERE F.idDetaSolicitud = @idDS;
+	END
+GO
+
+GO
+CREATE PROCEDURE IIncapacidad
+@action char(1),
+@num int, 
+@emp int,
+@fechI date,
+@fechF date, 
+@mot text,
+@id int
+AS
+	IF(@action = 'I')
+	BEGIN
+		INSERT INTO incapacidad(numIncapacidad, idEmpleado, motivo, fechaInicio, fechaFin)
+		VALUES (@num, @emp, @mot, @fechI, @fechF);
+
+		UPDATE personas SET idEstado=2 WHERE idEmpleado = @emp;
+	END
+	IF(@action = 'U')
+	BEGIN
+		UPDATE incapacidad SET fechaInicio = @fechI, fechaFin = @fechF WHERE idIncapacidad = @id
+	END
+GO
+
+GO
+CREATE PROCEDURE listPeople15days
+@fech date
+AS
+BEGIN
+	--detectar a las personas que ingresaron durante 15 dias atras
+	SELECT FORMAT(DI.fechaHoraIngreso, 'dd/MM/yyyy') AS fecha,  P.idPersona, P.nombreCompleto, DI.temperatura, S.idArea as Area
+	FROM detalleingreso AS DI INNER JOIN detallesolicitud AS DS ON DI.idDetalle = DS.idDetalle 
+	INNER JOIN personas AS P ON P.idPersona = DS.idVisitante
+	INNER JOIN solicitud AS S ON S.idSolicitud = DS.idSolicituDe
+	WHERE di.fechaHoraIngreso BETWEEN (DATEADD(DAY,-15, @fech)) AND @fech ORDER BY fechaHoraIngreso ASC;
+END
+
 GO

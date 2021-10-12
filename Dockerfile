@@ -1,5 +1,5 @@
 # version de node
-FROM node:12
+FROM node:14-alpine3.14
 
 #creamos una carpeta en el contenedor donde va estar los archivos de la app
 WORKDIR /app
@@ -12,12 +12,12 @@ COPY . .
 
 # variables de entorno
 ENV PORT=3000
-ENV DB_USER=SA
-ENV DB_PASSWORD=P4sw0ord
-ENV DB_SERVER=159.203.43.147
-ENV DB_DATABASE=bitacora
-ENV DB_PORT=1433
-ENV AZURE_LOGIC_APPS=https://prod-13.northcentralus.logic.azure.com:443/workflows/61cbe1ecbd604d87bb5880cbfb473046/triggers/manual/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=mtFsCYigAm2_HjHFcL7J9-bFZJ2TOy-EQA5ElHunylk
+ENV DB_USER=
+ENV DB_PASSWORD=
+ENV DB_SERVER=
+ENV DB_DATABASE=
+ENV DB_PORT=
+ENV AZURE_LOGIC_APPS=
 
 # instalamos npm para correr node
 RUN npm install

@@ -1,7 +1,7 @@
 import { getConnection, querys } from "../database";
 
 //function consult solicitudes
-export const searchSolicitud = async(id, action) =>{
+export const searchSolicitud = async (id, action) => {
     try {
         const connection = await getConnection();
         const result = await connection
@@ -16,7 +16,7 @@ export const searchSolicitud = async(id, action) =>{
 };
 
 //function list solicitudes
-export const listSolicitudes = async(id, rol) =>{
+export const listSolicitudes = async (id, rol) => {
     try {
         const connection = await getConnection();
         const result = await connection
@@ -32,42 +32,66 @@ export const listSolicitudes = async(id, rol) =>{
 
 
 //function insert solicitud
-export const addSolicitud = async(idUser, fecha, motivo, area, estado) =>{
+export const insertUpdateSolicitud = async (action, idUser, fecha, motivo, area, estado) => {
     try {
         const connection = await getConnection();
         const result = await connection
             .request()
+            .input("A", action)
             .input("user", idUser)
             .input("fech", fecha)
             .input("mo", motivo)
             .input("area", area)
             .input("est", estado)
-            .query(querys.postSolicitud);
-        return result.recordset[0]["ID"];
+            .query(querys.postPutSolicitud);
+
+        var msj
+        if (action != 'I') {
+            msj = "fields affected"
+        }
+        else {
+            msj = result.recordset[0]["ID"];
+        }
+        return msj;
     } catch (error) {
         console.error(error);
     }
 };
 
 //function insert detalleSolicitud
-export const addDetalleSolicitud = async(idSolicitud, idPerson, idForm) =>{
+export const addDetalleSolicitud = async (idSolicitud, idPerson) => {
     try {
         const connection = await getConnection();
-        await connection
+        const result = await connection
             .request()
             .input("sol", idSolicitud)
             .input("per", idPerson)
-            .input("idf", idForm)
             .query(querys.postDSolicitud);
-        var msg = "fields affected";
-        return msg;
+        return result.recordset[0]["ID"];
+    } catch (error) {
+        console.error(error);
+    }
+};
+
+//function create covid response requests
+export const crupResFormulario = async (action, idDetaSolicitud, numPregunta, request) => {
+    try {
+        const connection = await getConnection();
+        const result = await connection
+            .request()
+            .input("A", action)
+            .input("detaS", idDetaSolicitud)
+            .input("pre", numPregunta)
+            .input("res", request)
+            .query(querys.crupFormulario);
+        return result.recordset;
     } catch (error) {
         console.error(error);
     }
 };
 
 //function update state of the solicitud
-export const updateSolicitudState = async(solicitud, estado) =>{
+export const updateSolicitudState = async (solicitud, estado) => {
     try {
         const connection = await getConnection();
         await connection
@@ -83,7 +107,7 @@ export const updateSolicitudState = async(solicitud, estado) =>{
 };
 
 //function insert temperatura of the people
-export const insertTempPerson = async(temperatura, detalle) =>{
+export const insertTempPerson = async (temperatura, detalle) => {
     try {
         const connection = await getConnection();
         await connection
@@ -99,7 +123,7 @@ export const insertTempPerson = async(temperatura, detalle) =>{
 };
 
 //request function data to take action
-export const dataSolicitud = async(id, action) =>{
+export const dataSolicitud = async (id, action) => {
     try {
         const connection = await getConnection();
         const result = await connection
@@ -114,7 +138,7 @@ export const dataSolicitud = async(id, action) =>{
 };
 
 //capacity of an office
-export const capacidadVisitas = async(action, estado, area, fecha, solicitud) =>{
+export const capacidadVisitas = async (action, estado, area, fecha, solicitud) => {
     try {
         const connection = await getConnection();
         const result = await connection
@@ -125,7 +149,7 @@ export const capacidadVisitas = async(action, estado, area, fecha, solicitud) =>
             .input("fech", fecha)
             .input("id", solicitud)
             .query(querys.getCapacidad);
-            return result.recordset[0];
+        return result.recordset[0];
     } catch (error) {
         console.error(error);
     }

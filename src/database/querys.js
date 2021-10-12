@@ -17,9 +17,12 @@ export const querys = {
     getDetalleSolicitud: 'EXEC detalleSolicitudes @A, @id',
     getSolicitud: 'EXEC updateSolicitud @id, @est',
     getDataSolicitud: 'EXEC dataSolicitud @A, @id',
-    postSolicitud: 'EXEC ISolicitud @user, @fech, @mo, @area, @est',
-    postDSolicitud: 'EXEC IDSolicitud @sol, @per, @idf',
+    postPutSolicitud: 'EXEC ISolicitud @A, @user, @fech, @mo, @area, @est',
+    postDSolicitud: 'EXEC IDSolicitud @sol, @per',
     postDIngreso: 'EXEC IIngreso @temp, @idDP',
     getCapacidad: 'EXEC capacidadIngress @A, @est, @area, @fech, @id',
-    IIncapacidad: 'EXEC IIncapacidad @rh, @emp, @fechI, @fechF, @est, @mot',
+    IIncapacidad: 'EXEC IIncapacidad @A, @numI, @emp, @fechI, @fechF, @mot, @id',
+    crupFormulario: 'EXEC crupFormulario @A, @detaS, @pre, @res',
+    getNexEpidemiological: ' EXEC listPeople15days @fech',
+
 };
