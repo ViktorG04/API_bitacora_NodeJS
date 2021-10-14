@@ -131,7 +131,7 @@ create table formulario(
 idFormulario int not null IDENTITY(1,1),
 idDetaSolicitud int not null, 
 idPregunta int not null,
-respuesta char(1)
+respuesta char(2)
 primary key(idFormulario),
 foreign key(idPregunta) references preguntas(idPregunta),
 foreign key(idDetaSolicitud) references detallesolicitud(idDetalle));
@@ -422,18 +422,12 @@ GO
 GO
 --update state people and employee
 CREATE PROCEDURE StatePersonEmployee
-@action char(1),
 @est int,
 @id int
 AS
-	IF( @action = 'E')
-	BEGIN
-		UPDATE personas SET idEstado = @est WHERE idEmpleado = @id;
-	END
-	IF(@action = 'P')
-	BEGIN
-		UPDATE personas SET IdEstado = @est WHERE idPersona = @id;
-	END
+BEGIN
+	UPDATE personas SET IdEstado = @est WHERE idPersona = @id;
+END
 GO
 
 GO
@@ -677,7 +671,7 @@ CREATE PROCEDURE crupFormulario
 @action char(1),
 @idDS int,
 @idP int,
-@res char(1)
+@res char(2)
 AS
 	IF(@action = 'L')
 	BEGIN

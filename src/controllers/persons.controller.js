@@ -118,6 +118,39 @@ export const createNewPerson = async (nombre, docIdentidad, idEm) => {
   }
 };
 
+//update state person
+export const updateStatePerson = async (req, res) => {
+  const { id, estado } = req.body;
+
+  var idP, idE;
+
+  idP = parseInt(id);
+  idE = parseInt(estado);
+  if (isNaN(idP) || isNaN(idE)) {
+    return res.status(400).json({ msg: "Bad Request. Please fill all fields" });
+  }
+
+  if (idE == 1 || idE == 2) {
+
+    try {
+      const connection = await getConnection();
+      await connection
+        .request()
+        .input("est", idE)
+        .input("id", idP)
+        .query(querys.updateState);
+      res.json({ msg: "Updated status" })
+    } catch (error) {
+      res.status(500);
+      res.send(error.message);
+      console.error(error);
+    }
+  } else {
+    return res.status(400).json({ msg: "Bad Request. Please estate active = 1 or inactive = 2" });
+  }
+
+};
+
 //validate docIdentity
 export const getValidateDui = async (req, res) => {
   const { dui } = req.body;

@@ -12,6 +12,7 @@ export const querys = {
     getDataEmployee: 'EXEC dataEmployee @A, @id',
     getEmployee: 'EXEC IUUsers @A, @user, @co, @pas, @nom, @doc, @rol, @em, @est, @id',
     getPersons: 'EXEC IUPersons @A, @nom, @doc, @emp, @est, @id',
+    updateState: 'StatePersonEmployee @est, @id',
     getLogin: 'EXEC UserLogin @email',
     listSolicitudes: 'EXEC listSolicitudes @id, @rol',
     getDetalleSolicitud: 'EXEC detalleSolicitudes @A, @id',

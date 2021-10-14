@@ -90,14 +90,14 @@ export const getSolicitudById = async (req, res) => {
 
 //add new solicitud bye employee
 export const createNewSolicitudEmployee = async (req, res) => {
-    const { idUsuario, fechayHoraVisita, motivo, idArea, respuestas } = req.body;
+    const { idUsuario, fechayHoraVisita, motivo, idArea, viajo, sintomas, covidFamiliar } = req.body;
 
     var idU = parseInt(idUsuario);
     var idA = parseInt(idArea);
     var idP, idS, fecha, idDetalle, nombre, idE, capacidad, resultFormulario;
     idE = 3;
 
-    if (isNaN(idU) || isNaN(idA) || fechayHoraVisita == "" || motivo == "" || respuestas.length == 0) {
+    if (isNaN(idU) || isNaN(idA) || fechayHoraVisita == "" || motivo == "" || viajo == "" || sintomas =="" || covidFamiliar == "") {
         return res.status(400).json({ msg: "Bad Request. Please fill all fields" });
     }
 
@@ -130,9 +130,8 @@ export const createNewSolicitudEmployee = async (req, res) => {
     //add new detalleSolicitud
     idDetalle = await addDetalleSolicitud(idS, idP);
 
-    for (const i in respuestas) {
-        resultFormulario = await crupResFormulario('I', idDetalle, i, respuestas[i]);
-    }
+    //add request 
+    resultFormulario = await insertRestFormulario(idDetalle, viajo, sintomas, covidFamiliar);
 
     //sen email to rrhh
     sendEmailRRHH(nombre, fechayHoraVisita, idS, "Creada!");
@@ -198,9 +197,7 @@ export const createNewSolicitudVisitas = async (req, res) => {
         //add new detalleSolicitud
         idDetalle = await addDetalleSolicitud(idS, idP);
 
-        for(let numPregunta = 1; numPregunta <=3; numPregunta ++){
-            insertFormulario = await crupResFormulario('I', idDetalle, numPregunta, 'N');
-        }
+        insertFormulario = await insertRestFormulario(idDetalle, 'No', 'No', 'No');
     }
 
     if (idDetalle == null & insertFormulario == null) {
@@ -372,6 +369,17 @@ async function fechSolicitud(fecha) {
     return fecha;
 };
 
+//insert formulario
+async function insertRestFormulario( detalleSolicitud , pre1, pre2, pre3){
+    var insertFormulario;
+
+    insertFormulario = await crupResFormulario('I', detalleSolicitud, 1, pre1);
+    insertFormulario = await crupResFormulario('I', detalleSolicitud, 2, pre2);
+    insertFormulario = await crupResFormulario('I', detalleSolicitud, 3, pre3);
+
+    return insertFormulario;
+};
+
 //send email to rrhh
 async function sendEmailRRHH(nombre, fecha, solicitud, estado) {
     var rrhhh, msj;
@@ -430,7 +438,7 @@ async function validarCapacidadVisitas(fecha, area, estado, solicitud) {
 
     if (totalP < resultCA['capacidad']) {
         notificacion = "Solicitud Aprobada, personas posibles a ingresar " + ingressPeople['total'] +
-            " personas dentro de la oficina" + resultTPA['total'] + " disponibilidad actual " + nuevaC;
+            " personas dentro de la oficina " + resultTPA['total'] + " disponibilidad actual " + nuevaC;
     }
     else {
         notificacion = "ERROR! la capacidad maxima para el ingreso a la oficina es: " + resultCA['capacidad'] +

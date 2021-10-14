@@ -85,4 +85,21 @@ async function getNextEpidemiological(fecha){
     } catch (error) {
         console.error(error);
     }
+};
+
+export const updateIncapacidadById = async (req, res) =>{
+    const {incapacidad, fechaInicio, fechaFin, motivo} = req.body;
+
+    var idI, fechaI, fechaF;
+
+    idI = parseInt(incapacidad);
+
+    if(isNaN(idI) || fechaInicio =="" || fechaFin == "" || motivo == ""){
+
+    }
+
+    fechaI = await fechFormat(fechaInicio);
+    fechaF = await fechFormat(fechaFin);
+
+    
 }
