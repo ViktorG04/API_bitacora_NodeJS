@@ -49,6 +49,10 @@ export const getSolicitudById = async (req, res) => {
     //get details solicitud
     resultSolicitud = await searchSolicitud(id, "BS");
 
+    if(resultSolicitud.length == 0){
+        return res.status(400).json({ msg: "Error with id of the solicitud" });
+    }
+
     //get all people of solicitud
     resultDetalle = await searchSolicitud(id, "BD");
 
@@ -73,16 +77,15 @@ export const getSolicitudById = async (req, res) => {
     for (const i in resultDetalle) {
         delete resultDetalle[i]['empresa'];
         resultFormulario = await crupResFormulario('B', resultDetalle[i]['idDetalle'], '', '');
-        resultDetalle[i].respuestas = resultFormulario;
+
+            resultDetalle[i].sintomas = resultFormulario[0]['respuesta'];
+            resultDetalle[i].diagnosticado = resultFormulario[1]['respuesta'];
+            resultDetalle[i].covidFamiliar = resultFormulario[2]['respuesta'];
+            resultDetalle[i].viajo = resultFormulario[3]['respuesta'];
+        
     }
 
-    if(resultDetalle.length == 1){
-        resultSolicitud[0].idDetalle = resultDetalle[0]["idDetalle"];
-        resultSolicitud[0].dui = resultDetalle[0]['docIdentidad'];
-        resultSolicitud[0].respuestas = resultDetalle[0]['respuestas'];
-    }else{
         resultSolicitud[0].personas = resultDetalle;
-    }
 
     //send json
     res.json(resultSolicitud[0]);
@@ -90,14 +93,14 @@ export const getSolicitudById = async (req, res) => {
 
 //add new solicitud bye employee
 export const createNewSolicitudEmployee = async (req, res) => {
-    const { idUsuario, fechayHoraVisita, motivo, idArea, viajo, sintomas, covidFamiliar } = req.body;
+    const { idUsuario, fechayHoraVisita, motivo, idArea, sintomas, diagnosticado, covidFamiliar, viajo} = req.body;
 
     var idU = parseInt(idUsuario);
     var idA = parseInt(idArea);
     var idP, idS, fecha, idDetalle, nombre, idE, capacidad, resultFormulario;
     idE = 3;
 
-    if (isNaN(idU) || isNaN(idA) || fechayHoraVisita == "" || motivo == "" || viajo == "" || sintomas =="" || covidFamiliar == "") {
+    if (isNaN(idU) || isNaN(idA) || fechayHoraVisita == "" || motivo == "" || sintomas == "" || covidFamiliar == "" || diagnosticado == "" || viajo == "" ) {
         return res.status(400).json({ msg: "Bad Request. Please fill all fields" });
     }
 
@@ -131,7 +134,7 @@ export const createNewSolicitudEmployee = async (req, res) => {
     idDetalle = await addDetalleSolicitud(idS, idP);
 
     //add request 
-    resultFormulario = await insertRestFormulario(idDetalle, viajo, sintomas, covidFamiliar);
+    resultFormulario = await insertRestFormulario(idDetalle, sintomas, diagnosticado, covidFamiliar, viajo);
 
     //sen email to rrhh
     sendEmailRRHH(nombre, fechayHoraVisita, idS, "Creada!");
@@ -197,7 +200,7 @@ export const createNewSolicitudVisitas = async (req, res) => {
         //add new detalleSolicitud
         idDetalle = await addDetalleSolicitud(idS, idP);
 
-        insertFormulario = await insertRestFormulario(idDetalle, 'No', 'No', 'No');
+        insertFormulario = await insertRestFormulario(idDetalle, 'No', 'No', 'No', 'No');
     }
 
     if (idDetalle == null & insertFormulario == null) {
@@ -370,12 +373,13 @@ async function fechSolicitud(fecha) {
 };
 
 //insert formulario
-async function insertRestFormulario( detalleSolicitud , pre1, pre2, pre3){
+async function insertRestFormulario( detalleSolicitud , pre1, pre2, pre3, pre4){
     var insertFormulario;
 
     insertFormulario = await crupResFormulario('I', detalleSolicitud, 1, pre1);
     insertFormulario = await crupResFormulario('I', detalleSolicitud, 2, pre2);
     insertFormulario = await crupResFormulario('I', detalleSolicitud, 3, pre3);
+    insertFormulario = await crupResFormulario('I', detalleSolicitud, 4, pre4);
 
     return insertFormulario;
 };
