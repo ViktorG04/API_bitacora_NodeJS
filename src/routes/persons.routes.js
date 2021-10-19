@@ -1,7 +1,8 @@
 import { Router } from 'express';
 
 import {
-    getPersons, getPersonById, getPersonsbyCompany, updatePersonById, getPersonByName, getValidateDui
+    getPersons, getPersonById, getPersonsbyCompany, updatePersonById, getPersonByName, 
+    getValidateDui, updateStatePerson
 } from '../controllers/persons.controller';
 
 const router = Router();
@@ -17,6 +18,9 @@ router.get("/persons/:id", getPersonById);
 
 //update penson
 router.put("/persons", updatePersonById);
+
+//update status
+router.put("/persons/state", updateStatePerson);
 
 //validate doc identity
 router.post("/persons/validate/dui", getValidateDui);

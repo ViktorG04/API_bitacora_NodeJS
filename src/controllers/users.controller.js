@@ -2,6 +2,22 @@ import { getConnection, querys } from "../database";
 import { sendEmailAppService } from "./notificacion"
 import bcrypt from "bcryptjs";
 
+//list users
+export const getUsers = async(req, res) =>{
+  try {
+    const connection = await getConnection();
+    const result = await connection.request()
+      .input("id", 0)
+      .input("A", "LEI")
+      .query(querys.listEEPS);
+    res.json(result.recordset);
+
+  } catch (error) {
+    res.status(500);
+    res.send(error.message);
+  }
+};
+
 //insert employee
 export const createNewUser = async (req, res) => {
   const { nombre, dui, correo, idRol } = req.body;

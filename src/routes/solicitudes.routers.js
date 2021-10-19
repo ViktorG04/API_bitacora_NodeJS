@@ -1,7 +1,8 @@
 import { Router } from 'express';
 
 import {
- getSolicitudes, getSolicitudById, createNewSolicitudEmployee, createNewSolicitudVisitas, createDetalleIngreso, updateStateSolicitud
+ getSolicitudes, getSolicitudById, createNewSolicitudEmployee, createNewSolicitudVisitas, 
+ createDetalleIngreso, updateStateSolicitud, updateValuesSolicitud
 } from '../controllers/solicitud.controller';
 
 const router = Router();
@@ -24,3 +25,6 @@ router.post("/solicitudes/ingreso", createDetalleIngreso);
 
 //update state solicitud
 router.put("/solicitudes/estado", updateStateSolicitud);
+
+//update all data
+router.put("/solicitudes", updateValuesSolicitud);
