@@ -32,11 +32,11 @@ export const createNewArea = async (req, res) => {
 
 //update area
 export const updateAreaById = async (req, res) => {
-  const { idArea, descripcion, estado, capacidad } = req.body;
+  const { idArea, descripcion, idEstado, capacidad } = req.body;
 
   var idA, idE, maxPeople;
   idA = parseInt(idArea);
-  idE = parseInt(estado);
+  idE = parseInt(idEstado);
   maxPeople = parseInt(capacidad);
 
   if (isNaN(idA) || isNaN(idE) || descripcion == "" || isNaN(maxPeople)) {
