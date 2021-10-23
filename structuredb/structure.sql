@@ -486,10 +486,16 @@ AS
 		ON personas.idEmpresa = empresa.idEmpresa INNER JOIN estado ON estado.idEstado = personas.idEstado
 		WHERE personas.idEmpresa = @id;
 	END
-	IF(@action = 'LEI')
+	IF(@action = 'LEB')
 	BEGIN
 		SELECT U.idUsuario, P.nombreCompleto FROM usuario AS U INNER JOIN personas AS P ON P.idEmpleado = U.idUsuario
 	END
+    IF(@action = 'LEI')
+	BEGIN
+		---list company by id
+		SELECT * FROM empresa WHERE empresa.idEmpresa = @id;
+	END
+
 GO
 
 GO

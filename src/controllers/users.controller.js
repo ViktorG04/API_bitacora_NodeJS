@@ -8,7 +8,7 @@ export const getUsers = async(req, res) =>{
     const connection = await getConnection();
     const result = await connection.request()
       .input("id", 0)
-      .input("A", "LEI")
+      .input("A", "LEB")
       .query(querys.listEEPS);
     res.json(result.recordset);
 
