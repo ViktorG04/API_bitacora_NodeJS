@@ -1,0 +1,19 @@
+apiVersion : apps/v1
+kind: Deployment
+metadata:
+  name: apinodejs 
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: apinodejs
+  template:
+    metadata:
+      labels:
+        app: apinodejs 
+    spec:
+      containers:
+        - name: apinodejs 
+          image: bitacorapre.azurecr.io/apinodejs
+          ports:
+          - containerPort: 80
