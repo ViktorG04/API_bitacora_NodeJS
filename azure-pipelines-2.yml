@@ -4,6 +4,8 @@
 
 trigger:
 - main
+- develop
+- staging
 
 resources:
 - repo: self
@@ -21,7 +23,7 @@ variables:
   # Agent VM image name
   vmImageName: 'ubuntu-latest'
 
-  ${{ if eq(variables['Build.SourceBranchName'], 'master') }}: 
+  ${{ if eq(variables['Build.SourceBranchName'], 'main') }}: 
     deploymentEnvironment: 'Production.api'
   ${{ if eq(variables['Build.SourceBranchName'], 'develop') }}: 
     deploymentEnvironment: 'Development.api-dev'
