@@ -486,6 +486,10 @@ AS
 		ON personas.idEmpresa = empresa.idEmpresa INNER JOIN estado ON estado.idEstado = personas.idEstado
 		WHERE personas.idEmpresa = @id;
 	END
+	IF(@action = 'LEI')
+	BEGIN
+		SELECT U.idUsuario, P.nombreCompleto FROM usuario AS U INNER JOIN personas AS P ON P.idEmpleado = U.idUsuario
+	END
 GO
 
 GO
@@ -695,19 +699,29 @@ CREATE PROCEDURE IIncapacidad
 @emp int,
 @fechI date,
 @fechF date, 
-@mot text,
-@id int
+@mot text
 AS
 	IF(@action = 'I')
 	BEGIN
 		INSERT INTO incapacidad(numIncapacidad, idEmpleado, motivo, fechaInicio, fechaFin)
 		VALUES (@num, @emp, @mot, @fechI, @fechF);
-
 		UPDATE personas SET idEstado=2 WHERE idEmpleado = @emp;
 	END
-	IF(@action = 'U')
+	IF(@action = 'L')
 	BEGIN
-		UPDATE incapacidad SET fechaInicio = @fechI, fechaFin = @fechF WHERE idIncapacidad = @id
+		SELECT I.numIncapacidad, P.nombreCompleto, I.motivo,
+		FORMAT(I.fechaInicio, 'dd/MM/yyyy') AS fechaInicio,
+		FORMAT(I.fechaFin, 'dd/MM/yyyy') AS fechaFin FROM incapacidad AS I INNER JOIN
+		usuario AS U ON I.idEmpleado = U.idUsuario INNER JOIN personas AS P
+		ON P.idEmpleado = U.idUsuario ORDER BY p.nombreCompleto DESC;
+	END
+	IF(@action = 'B')
+	BEGIN
+		SELECT I.numIncapacidad, P.nombreCompleto, I.motivo,
+		FORMAT(I.fechaInicio, 'dd/MM/yyyy') AS fechaInicio,
+		FORMAT(I.fechaFin, 'dd/MM/yyyy') AS fechaFin FROM incapacidad AS I INNER JOIN
+		usuario AS U ON I.idEmpleado = U.idUsuario INNER JOIN personas AS P
+		ON P.idEmpleado = U.idUsuario WHERE I.idEmpleado = @emp ORDER BY P.nombreCompleto DESC;
 	END
 GO
 

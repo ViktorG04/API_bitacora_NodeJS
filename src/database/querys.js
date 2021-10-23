@@ -22,7 +22,7 @@ export const querys = {
     postDSolicitud: 'EXEC IDSolicitud @sol, @per',
     postDIngreso: 'EXEC IIngreso @temp, @idDP',
     getCapacidad: 'EXEC capacidadIngress @A, @est, @area, @fech, @id',
-    IIncapacidad: 'EXEC IIncapacidad @A, @numI, @emp, @fechI, @fechF, @mot, @id',
+    IIncapacidad: 'EXEC IIncapacidad @A, @numI, @emp, @fechI, @fechF, @mot',
     crupFormulario: 'EXEC crupFormulario @A, @detaS, @pre, @res',
     getNexEpidemiological: ' EXEC listPeople15days @fech',
 

@@ -32,18 +32,18 @@ export const createNewArea = async (req, res) => {
 
 //update area
 export const updateAreaById = async (req, res) => {
-  const { idArea, nombre, estado, capacidad } = req.body;
+  const { idArea, descripcion, estado, capacidad } = req.body;
 
   var idA, idE, maxPeople;
   idA = parseInt(idArea);
   idE = parseInt(estado);
   maxPeople = parseInt(capacidad);
 
-  if (isNaN(idA) || isNaN(idE) || nombre == "" || isNaN(maxPeople)) {
+  if (isNaN(idA) || isNaN(idE) || descripcion == "" || isNaN(maxPeople)) {
     return res.status(400).json({ msg: "Bad Request. Please fill all fields" });
   }
   if (idE == 1 || idE == 2) {
-    var result = await crupAreas(idA, nombre, 'U', idE, maxPeople);
+    var result = await crupAreas(idA, descripcion, 'U', idE, maxPeople);
     res.json({ result });
   } else {
     return res.status(400).json({ msg: "Bad Request. Please estate active = 1 or inactive = 2" });
