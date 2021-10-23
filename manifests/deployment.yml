@@ -16,4 +16,4 @@ spec:
         - name: apinodejs 
           image: bitacorapre.azurecr.io/apinodejs
           ports:
-          - containerPort: 80
+          - containerPort: 3000
