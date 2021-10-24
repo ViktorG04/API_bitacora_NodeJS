@@ -25,10 +25,13 @@ variables:
 
   ${{ if eq(variables['Build.SourceBranchName'], 'main') }}: 
     deploymentEnvironment: 'Production.api'
+    overlay: 'production'
   ${{ if eq(variables['Build.SourceBranchName'], 'develop') }}: 
     deploymentEnvironment: 'Development.api-dev'
+    overlay: 'development'
   ${{ if eq(variables['Build.SourceBranchName'], 'staging') }}: 
     deploymentEnvironment: 'Staging.api-staging'
+    overlay: 'staging'
 
 stages:
 - stage: Build
@@ -72,14 +75,20 @@ stages:
               action: createSecret
               secretName: $(imagePullSecret)
               dockerRegistryEndpoint: $(dockerRegistryServiceConnection)
+          
+          - task: KubernetesManifest@0
+            name: bake
+            displayName: Bake K8s manifests from kustomization path
+            inputs:
+              action: bake
+              renderType: kustomize
+              kustomizationPath: $(Pipeline.Workspace)/manifests/overlays/$(overlay)
 
           - task: KubernetesManifest@0
             displayName: Deploy to Kubernetes cluster
             inputs:
               action: deploy
-              manifests: |
-                $(Pipeline.Workspace)/manifests/deployment.yml
-                $(Pipeline.Workspace)/manifests/service.yml
+              manifests: $(bake.manifestsBundle)
               imagePullSecrets: |
                 $(imagePullSecret)
               containers: |
