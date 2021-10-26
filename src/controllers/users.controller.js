@@ -61,21 +61,21 @@ export const createNewUser = async (req, res) => {
   }
   res.json(result);
 
-  mensaje = "Nuevo usuario creado para"+correo+" y password: "+passRandom
+  mensaje = "Nuevo usuario creado para "+correo+" y password: "+passRandom
   sendEmailAppService("Usuario Creado!", correo, mensaje);
 };
 
 
 //update Employee
 export const updateUserById = async (req, res) => {
-  const { idUsuario, nombre, dui, correo, idRol, password } = req.body;
+  const { idUsuario, nombreCompleto, docIdentidad, correo, idRol, password } = req.body;
 
   var idU, idR, pass, result, user, mensaje;
 
   idU = parseInt(idUsuario);
   idR = parseInt(idRol);
 
-  if ( isNaN(idU) || isNaN(idR) || nombre == "" || dui == "" || correo == "") {
+  if ( isNaN(idU) || isNaN(idR) || nombreCompleto == "" || docIdentidad == "" || correo == "") {
     return res.status(400).json({ msg: "Bad Request. Please fill all fields" });
   }
 
@@ -93,9 +93,9 @@ export const updateUserById = async (req, res) => {
     pass = result['pass'];
   }
  
-  if(dui != result['docIdentidad'] & correo != result['dcorreo'] ){
+  if(docIdentidad != result['docIdentidad'] & correo != result['correo'] ){
     //validate docIdentity
-    result = await ValidarCampo(dui, "D");
+    result = await ValidarCampo(docIdentidad, "D");
     if (result['V'] != 0) {
       return res.status(400).json({ msg: "Bad Request. please enter a different DUI" });
     }
@@ -109,10 +109,12 @@ export const updateUserById = async (req, res) => {
   //user by correo
   user = correo.split("@");
   user = user[0];
-
   //call update
-  result = await IUEmployee(idU,'U',user,correo,pass,nombre, dui,idR);
+  result = await IUEmployee(idU,'U',user,correo,pass,nombreCompleto, docIdentidad,idR, 1,'');
   
+  if(result == null){
+    return res.status(400).json({ msg: "Data Update Error" });
+  }
   res.json({ result});
 
   if(password !="" & result != null){
@@ -143,7 +145,6 @@ async function IUEmployee(id, A, U, Co, Pas, Nm, D, R, Em, E) {
     const connection = await getConnection();
     await connection
       .request()
-      .input("id", id)
       .input("A", A)
       .input("user", U)
       .input("co", Co)
@@ -153,6 +154,7 @@ async function IUEmployee(id, A, U, Co, Pas, Nm, D, R, Em, E) {
       .input("rol", R)
       .input("em", Em)
       .input("est", E)
+      .input("id", id)
       .query(querys.getEmployee);
     var msg = "fields affected";
     return (msg );
