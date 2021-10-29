@@ -11,6 +11,10 @@ export const getAreas = async (req, res) => {
 //only area
 export const getAreaById = async (req, res) => {
   var result = await crupAreas(req.params.id, '', 'B', '');
+
+  if(result.length == 0){
+    return res.status(400).json({ msg: "Bad Request. Error! Area no existe" });
+  }
   res.json(result[0]);
 };
 
@@ -50,8 +54,6 @@ export const updateAreaById = async (req, res) => {
   }
 };
 
-
-
 export const getCapacity = async (req, res) => {
 
   const { fecha } = req.body;
@@ -81,9 +83,6 @@ export const getCapacity = async (req, res) => {
   }
   res.json(result);
 };
-
-
-
 
 //function crup in database
 async function crupAreas(id, area, action, estado, max) {

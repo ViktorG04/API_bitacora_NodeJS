@@ -1,6 +1,6 @@
 import { Router } from 'express';
 
-import {createNewIncapacidad, getIncapacidades, getIncapacidadByIdEmployee} from '../controllers/incapacidad.controller';
+import {createNewIncapacidad, getIncapacidades, getIncapacidadByIdEmployee, nexepidemiologicos} from '../controllers/incapacidad.controller';
 
 const router = Router();
 
@@ -12,5 +12,7 @@ router.get("/incapacidades/:id", getIncapacidadByIdEmployee)
 
 //insert 
 router.post("/incapacidades", createNewIncapacidad);
+
+router.get("/incapacidades/nexos/:id", nexepidemiologicos);
 
 export default router;

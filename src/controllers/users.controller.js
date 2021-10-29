@@ -3,7 +3,7 @@ import { sendEmailAppService } from "./notificacion"
 import bcrypt from "bcryptjs";
 
 //list users
-export const getUsers = async(req, res) =>{
+export const getUsers = async (req, res) => {
   try {
     const connection = await getConnection();
     const result = await connection.request()
@@ -11,7 +11,6 @@ export const getUsers = async(req, res) =>{
       .input("A", "LEB")
       .query(querys.listEEPS);
     res.json(result.recordset);
-
   } catch (error) {
     res.status(500);
     res.send(error.message);
@@ -53,7 +52,7 @@ export const createNewUser = async (req, res) => {
   //password random and encrypt
   passRandom = Math.random().toString(36).slice(-8);
   pass = bcrypt.hashSync(passRandom, 8);
-  
+
   //insert users
   result = await IUEmployee(0, "I", user, correo, pass, nombre, dui, idR, idEm, idE);
   if (result == null) {
@@ -61,7 +60,7 @@ export const createNewUser = async (req, res) => {
   }
   res.json(result);
 
-  mensaje = "Nuevo usuario creado para "+correo+" y password: "+passRandom
+  mensaje = "Nuevo usuario creado para " + correo + " y password: " + passRandom
   sendEmailAppService("Usuario Creado!", correo, mensaje);
 };
 
@@ -75,30 +74,31 @@ export const updateUserById = async (req, res) => {
   idU = parseInt(idUsuario);
   idR = parseInt(idRol);
 
-  if ( isNaN(idU) || isNaN(idR) || nombreCompleto == "" || docIdentidad == "" || correo == "") {
+  if (isNaN(idU) || isNaN(idR) || nombreCompleto == "" || docIdentidad == "" || correo == "") {
     return res.status(400).json({ msg: "Bad Request. Please fill all fields" });
   }
 
   //compare if new docIdentity and email
   result = await ValidarCampo(idU, 'B');
 
-  if(password !=""){
-    if(password.length < 8 || password.length >12){
+  if (password != "") {
+    if (password.length < 8 || password.length > 12) {
       return res.status(400).json({ msg: "Bad Request. please password length between 8 and 12 chars" });
     }
     //password encrypt
     pass = bcrypt.hashSync(password, 8);
 
-  }else{
+  } else {
     pass = result['pass'];
   }
- 
-  if(docIdentidad != result['docIdentidad'] & correo != result['correo'] ){
+  if (docIdentidad != result['docIdentidad']) {
     //validate docIdentity
     result = await ValidarCampo(docIdentidad, "D");
     if (result['V'] != 0) {
       return res.status(400).json({ msg: "Bad Request. please enter a different DUI" });
     }
+  }
+  if (correo != result['correo']) {
     //validate correo
     result = await ValidarCampo(correo, "C");
     if (result['V'] != 0) {
@@ -110,15 +110,15 @@ export const updateUserById = async (req, res) => {
   user = correo.split("@");
   user = user[0];
   //call update
-  result = await IUEmployee(idU,'U',user,correo,pass,nombreCompleto, docIdentidad,idR, 1,'');
-  
-  if(result == null){
+  result = await IUEmployee(idU, 'U', user, correo, pass, nombreCompleto, docIdentidad, idR, 1, '');
+
+  if (result == null) {
     return res.status(400).json({ msg: "Data Update Error" });
   }
-  res.json({ result});
+  res.json({ result });
 
-  if(password !="" & result != null){
-    mensaje = "Su nueva contraseña es: "+password+" favor ingresar al siguiente link para ingresar"
+  if (password != "" & result != null) {
+    mensaje = "Su nueva contraseña es: " + password + " favor ingresar al siguiente link para ingresar"
     sendEmailAppService("Password Actualizado!", correo, mensaje);
   }
 };
@@ -157,7 +157,7 @@ async function IUEmployee(id, A, U, Co, Pas, Nm, D, R, Em, E) {
       .input("id", id)
       .query(querys.getEmployee);
     var msg = "fields affected";
-    return (msg );
+    return (msg);
   } catch (error) {
     console.error(error);
   }
