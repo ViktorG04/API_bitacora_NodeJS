@@ -1,17 +1,18 @@
 import { getConnection, querys } from "../database";
 import { fechFormat } from "./notificacion";
+import { detalleEmployee } from "./persons.controller";
 import moment from "moment";
 
 //list incapacidad
-export const getIncapacidades = async (req, res) =>{
+export const getIncapacidades = async (req, res) => {
     var result;
 
-    result = await crupIncapacidad('L','','','','','')
+    result = await crupIncapacidad('L', '', '', '', '', '')
     res.json(result);
 };
 
 //list incapacidad by employee
-export const getIncapacidadByIdEmployee = async(req, res) =>{
+export const getIncapacidadByIdEmployee = async (req, res) => {
     const id = req.params.id;
     var result;
 
@@ -24,7 +25,7 @@ export const createNewIncapacidad = async (req, res) => {
     const { numIncapacidad, idEmpleado, fechaInicio, fechaFin, motivo } = req.body;
 
     var numIn, idEm, fInicio, fFin, result, days;
-    
+
     numIn = parseInt(numIncapacidad);
     idEm = parseInt(idEmpleado);
 
@@ -35,20 +36,56 @@ export const createNewIncapacidad = async (req, res) => {
     fInicio = await fechFormat(fechaInicio);
     fFin = await fechFormat(fechaFin);
 
-    result = await crupIncapacidad('I',numIn, idEm, fInicio, fFin, motivo, 0);
+    result = await crupIncapacidad('I', numIn, idEm, fInicio, fFin, motivo, 0);
 
     if (result == null) {
         return res.status(400).json({ msg: "Bad Request. Error! insert incapacidad" });
     }
-    
+
     fInicio = moment(fInicio.split(" ")[0]);
     fFin = moment(fFin.split(" ")[0]);
 
     days = (fFin.diff(fInicio, 'days'));
 
-    result = result+" usuario Inactivo durante " +days+" dias";
-    
+    result = result + " usuario Inactivo durante " + days + " dias";
+
     res.json(result);
+};
+
+//nexos epidemiologicos
+export const nexepidemiologicos = async (req, res) => {
+
+    const id = req.params.id;
+
+    var restIncapacidad, result15days, idP, person, fecha;
+    var nexos = [];
+
+    restIncapacidad = await crupIncapacidad('N',id, '', '', '', '');
+
+    if(restIncapacidad.length == 0){
+        return res.status(400).json({ msg: "Bad Request. Error! id incapacidad incorrecto" });
+    }
+    
+    idP = await detalleEmployee(restIncapacidad[0]['idEmpleado'], 'I');
+    idP = idP['idPersona'];
+
+    fecha = await fechFormat(restIncapacidad[0]['fecha'])
+
+    //entry of people after 15 days
+    result15days = await getNextEpidemiological(fecha);
+
+    for (const i in result15days) {
+
+        if (result15days[i]['idPersona'] == idP) {
+            person = result15days[i];
+        }
+        if (result15days[i]['Area'] == person['Area'] & result15days[i]['fecha'] == person['fecha']) {
+            nexos.push(result15days[i]);
+        }
+    }
+
+    res.json(nexos);
+
 };
 
 
@@ -67,12 +104,25 @@ async function crupIncapacidad(action, incapacidad, empleado, fechaInicio, fecha
             .query(querys.IIncapacidad);
         var msj;
 
-        if(action !='I'){
+        if (action != 'I') {
             msj = result.recordset;
-        }else{
+        } else {
             msj = "Incapacidad Creada!";
         }
         return msj;
+    } catch (error) {
+        console.error(error);
+    }
+};
+
+async function getNextEpidemiological(fecha) {
+    try {
+        const connection = await getConnection();
+        const result = await connection
+            .request()
+            .input("fech", fecha)
+            .query(querys.getNexEpidemiological);
+        return result.recordset;
     } catch (error) {
         console.error(error);
     }

@@ -17,6 +17,23 @@ export const getCompanies = async (req, res) => {
   }
 };
 
+//all companies by id
+export const getCompanyById = async (req, res) => {
+  try {
+
+    const connection = await getConnection();
+    const result = await connection.request()
+      .input("id", req.params.id)
+      .input("A", "LEI")
+      .query(querys.listEEPS);
+    res.json(result.recordset[0]);
+
+  } catch (error) {
+    res.status(500);
+    res.send(error.message);
+  }
+};
+
 //update company
 export const updateCompanyById = async (req, res) => {
   const { idEmpresa, nombre, idTipo, idEstado } = req.body;

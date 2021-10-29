@@ -11,6 +11,10 @@ export const getAreas = async (req, res) => {
 //only area
 export const getAreaById = async (req, res) => {
   var result = await crupAreas(req.params.id, '', 'B', '');
+
+  if(result.length == 0){
+    return res.status(400).json({ msg: "Bad Request. Error! Area no existe" });
+  }
   res.json(result[0]);
 };
 
@@ -32,25 +36,23 @@ export const createNewArea = async (req, res) => {
 
 //update area
 export const updateAreaById = async (req, res) => {
-  const { idArea, nombre, estado, capacidad } = req.body;
+  const { idArea, descripcion, idEstado, capacidad } = req.body;
 
   var idA, idE, maxPeople;
   idA = parseInt(idArea);
-  idE = parseInt(estado);
+  idE = parseInt(idEstado);
   maxPeople = parseInt(capacidad);
 
-  if (isNaN(idA) || isNaN(idE) || nombre == "" || isNaN(maxPeople)) {
+  if (isNaN(idA) || isNaN(idE) || descripcion == "" || isNaN(maxPeople)) {
     return res.status(400).json({ msg: "Bad Request. Please fill all fields" });
   }
   if (idE == 1 || idE == 2) {
-    var result = await crupAreas(idA, nombre, 'U', idE, maxPeople);
+    var result = await crupAreas(idA, descripcion, 'U', idE, maxPeople);
     res.json({ result });
   } else {
     return res.status(400).json({ msg: "Bad Request. Please estate active = 1 or inactive = 2" });
   }
 };
-
-
 
 export const getCapacity = async (req, res) => {
 
@@ -81,9 +83,6 @@ export const getCapacity = async (req, res) => {
   }
   res.json(result);
 };
-
-
-
 
 //function crup in database
 async function crupAreas(id, area, action, estado, max) {

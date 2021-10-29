@@ -183,7 +183,7 @@ AS
 	END
 	IF(@action = 'B')
 	BEGIN
-		SELECT P.docIdentidad, U.correo, U.pass FROM personas AS P INNER JOIN usuario AS U ON U.idUsuario = P.idPersona 
+		SELECT P.docIdentidad, U.correo, U.pass FROM personas AS P INNER JOIN usuario AS U ON U.idUsuario = P.idEmpleado 
 		WHERE P.idEmpleado = @var;
 	END
 GO
@@ -463,7 +463,7 @@ AS
 	IF(@action = 'LTP')
 	BEGIN
 		---list all people---
-		SELECT idPersona, nombreCompleto, docIdentidad, nombre AS empresa, estado FROM personas INNER JOIN empresa
+		SELECT idPersona, nombreCompleto, docIdentidad, nombre AS empresa, personas.idEstado, estado FROM personas INNER JOIN empresa
 		ON personas.idEmpresa = empresa.idEmpresa INNER JOIN estado ON estado.idEstado = personas.idEstado
 	END
 	IF(@action = 'BP')
@@ -482,13 +482,22 @@ AS
 	IF(@action = 'LPE')
 	BEGIN
 		---list people by company---
-		SELECT idPersona, nombreCompleto, docIdentidad, nombre, estado FROM personas INNER JOIN empresa
+		SELECT idPersona, nombreCompleto, docIdentidad, nombre, personas.idEstado, estado FROM personas INNER JOIN empresa
 		ON personas.idEmpresa = empresa.idEmpresa INNER JOIN estado ON estado.idEstado = personas.idEstado
 		WHERE personas.idEmpresa = @id;
 	END
-	IF(@action = 'LEI')
+	IF(@action = 'LEB')
 	BEGIN
-		SELECT U.idUsuario, P.nombreCompleto FROM usuario AS U INNER JOIN personas AS P ON P.idEmpleado = U.idUsuario
+		SELECT P.idEmpleado, P.nombreCompleto FROM usuario AS U INNER JOIN personas AS P ON P.idEmpleado = U.idUsuario
+	END
+    IF(@action = 'LEI')
+	BEGIN
+		---list company by id
+		SELECT * FROM empresa WHERE empresa.idEmpresa = @id;
+	END
+	IF(@action = 'BPE')
+	BEGIN
+		SELECT idPersona, nombreCompleto, docIdentidad FROM personas WHERE idEstado = 1 AND idEmpresa = @id;
 	END
 GO
 
@@ -709,7 +718,7 @@ AS
 	END
 	IF(@action = 'L')
 	BEGIN
-		SELECT I.numIncapacidad, P.nombreCompleto, I.motivo,
+		SELECT I.idIncapacidad, I.numIncapacidad, P.nombreCompleto, I.motivo,
 		FORMAT(I.fechaInicio, 'dd/MM/yyyy') AS fechaInicio,
 		FORMAT(I.fechaFin, 'dd/MM/yyyy') AS fechaFin FROM incapacidad AS I INNER JOIN
 		usuario AS U ON I.idEmpleado = U.idUsuario INNER JOIN personas AS P
@@ -717,11 +726,16 @@ AS
 	END
 	IF(@action = 'B')
 	BEGIN
-		SELECT I.numIncapacidad, P.nombreCompleto, I.motivo,
+		SELECT I.idIncapacidad, I.numIncapacidad, P.nombreCompleto, I.motivo,
 		FORMAT(I.fechaInicio, 'dd/MM/yyyy') AS fechaInicio,
 		FORMAT(I.fechaFin, 'dd/MM/yyyy') AS fechaFin FROM incapacidad AS I INNER JOIN
 		usuario AS U ON I.idEmpleado = U.idUsuario INNER JOIN personas AS P
 		ON P.idEmpleado = U.idUsuario WHERE I.idEmpleado = @emp ORDER BY P.nombreCompleto DESC;
+	END
+	IF(@action = 'N')
+	BEGIN
+		SELECT I.idEmpleado, FORMAT(I.fechaInicio, 'dd/MM/yyyy') AS fecha
+		FROM incapacidad AS I WHERE I.idIncapacidad = @num;
 	END
 GO
 
@@ -737,5 +751,30 @@ BEGIN
 	INNER JOIN solicitud AS S ON S.idSolicitud = DS.idSolicituDe
 	WHERE di.fechaHoraIngreso BETWEEN (DATEADD(DAY,-15, @fech)) AND @fech ORDER BY fechaHoraIngreso ASC;
 END
+GO
 
+GO
+CREATE PROCEDURE reportes
+@action char(2)
+AS
+	IF(@action = 'LT')
+	BEGIN
+		SELECT S.idSolicitud, DS.idDetalle, P.nombreCompleto, P.docIdentidad, E.nombre AS empresa, 
+		A.descripcion as oficina, S.idEstado
+		FROM solicitud AS S 
+		INNER JOIN detallesolicitud AS DS ON S.idSolicitud = DS.idSolicituDe
+		INNER JOIN personas AS P ON P.idPersona = DS.idVisitante
+		INNER JOIN empresa AS E ON E.idEmpresa = P.idEmpresa
+		INNER JOIN areas AS A ON A.idArea = S.idArea ORDER BY S.idSolicitud DESC;
+	END
+	IF(@action = 'LS')
+	BEGIN
+		SELECT S.idSolicitud, DSI.idDetalle, DSI.temperatura,
+		FORMAT(DSI.fechaHoraIngreso, 'dd/MM/yyyy hh:mm tt') AS fechaHoraIngreso, 
+		FORMAT(DSI.fechaHoraSalida, 'dd/MM/yyyy hh:mm tt') AS fechaHoraSalida FROM detallesolicitud AS DTS
+		INNER JOIN personas AS P ON DTS.idVisitante = P.idPersona
+		INNER JOIN empresa AS E ON P.idEmpresa = E.idEmpresa
+		INNER JOIN detalleingreso AS DSI ON DSI.idDetalle = DTS.idDetalle
+		INNER JOIN solicitud AS S ON S.idSolicitud = DTS.idSolicituDe Order by S.idSolicitud DESC
+	END
 GO
