@@ -26,4 +26,5 @@ export const querys = {
     crupFormulario: 'EXEC crupFormulario @A, @detaS, @pre, @res',
     getNexEpidemiological: ' EXEC listPeople15days @fech',
     getReportes: 'EXEC reportes @A',
+    getOrdenarDatos: 'EXEC arreglardata @A, @D, @I'
 };

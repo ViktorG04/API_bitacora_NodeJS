@@ -53,7 +53,7 @@ DROP TABLE [dbo].[empresa]
 
 create table empresa(
 idEmpresa int not null IDENTITY(1,1),
-nombre varchar(50) not null,
+nombre varchar(60) not null,
 idTipo int not null,
 idEstado int not null,
 primary key(idEmpresa),
@@ -299,7 +299,7 @@ GO
 CREATE PROCEDURE IUEntity
 @action char(1),
 @id int,
-@var varchar(50),
+@var varchar(60),
 @tip int,
 @es int
 AS

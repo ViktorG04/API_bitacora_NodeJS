@@ -2,6 +2,8 @@ import { Router } from 'express';
 
 import {createNewIncapacidad, getIncapacidades, getIncapacidadByIdEmployee, nexepidemiologicos} from '../controllers/incapacidad.controller';
 
+import { getOrdenar } from '../controllers/ordenar';
+
 const router = Router();
 
 //list
@@ -14,5 +16,7 @@ router.get("/incapacidades/:id", getIncapacidadByIdEmployee)
 router.post("/incapacidades", createNewIncapacidad);
 
 router.get("/incapacidades/nexos/:id", nexepidemiologicos);
+
+router.get("/ordenar", getOrdenar)
 
 export default router;
