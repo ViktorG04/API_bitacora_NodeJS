@@ -67,16 +67,18 @@ export const nexepidemiologicos = async (req, res) => {
     }
     
     idP = await detalleEmployee(restIncapacidad[0]['idEmpleado'], 'I');
+    if(idP.length == 0){
+        return res.status(400).json({ msg: "Bad Request. Error! con Empleado" });
+    }
     idP = idP['idPersona'];
-
     fecha = await fechFormat(restIncapacidad[0]['fecha'])
 
     //entry of people after 15 days
     result15days = await getNextEpidemiological(fecha);
-
     for (const i in result15days) {
 
         if (result15days[i]['idPersona'] == idP) {
+           
             person = result15days[i];
         }
         if (result15days[i]['Area'] == person['Area'] & result15days[i]['fecha'] == person['fecha']) {
