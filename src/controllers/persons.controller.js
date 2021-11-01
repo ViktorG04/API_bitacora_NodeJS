@@ -62,7 +62,7 @@ export const getPersonById = async (req, res) => {
 
 //update person
 export const updatePersonById = async (req, res) => {
-  const { idPersona, nombreCompleto, docIdentidad, idEmpresa} = req.body;
+  const { idPersona, nombreCompleto, docIdentidad, idEmpresa } = req.body;
 
   const A = 'U';
   var idP, idEm;
@@ -73,22 +73,22 @@ export const updatePersonById = async (req, res) => {
     return res.status(400).json({ msg: "Bad Request. Please fill all fields" });
   }
   try {
-      const connection = await getConnection();
-      await connection
-        .request()
-        .input("A", A)
-        .input("nom", nombreCompleto)
-        .input("doc", docIdentidad)
-        .input("emp", idEm)
-        .input("est", '')
-        .input("id", idP)
-        .query(querys.getPersons);
-      res.json({ msg: "fields affected" })
-    } catch (error) {
-      res.status(500);
-      res.send(error.message);
-      console.error(error);
-    }
+    const connection = await getConnection();
+    await connection
+      .request()
+      .input("A", A)
+      .input("nom", nombreCompleto)
+      .input("doc", docIdentidad)
+      .input("emp", idEm)
+      .input("est", '')
+      .input("id", idP)
+      .query(querys.getPersons);
+    res.json({ msg: "fields affected" })
+  } catch (error) {
+    res.status(500);
+    res.send(error.message);
+    console.error(error);
+  }
 };
 
 //insert person
@@ -171,27 +171,25 @@ export const getValidateDui = async (req, res) => {
 };
 
 //search person by name
-export const getPersonByName = async (req, res) => {
-  const { nombre } = req.body;
-  const like = "%";
-  if (nombre == "") {
-    return res.status(400).json({ msg: "Bad Request. Please fill all field" });
+export const getPeopleByCompany = async (req, res) => {
+  var id, result;
+
+  id = parseInt(req.params.id);
+
+  if (isNaN(id)) {
+    return res.status(400).json({ msg: "Bad Request. Please fill all fields" });
   }
-  var value = nombre + like;
+
   try {
     const connection = await getConnection();
-    const result = await connection
-      .request()
-      .input("A", "P")
-      .input("value", value)
-      .query(querys.getSearch);
-
+    const result = await connection.request()
+      .input("id", id)
+      .input("A", 'BPE')
+      .query(querys.listEEPS);
     res.json(result.recordset);
-
   } catch (error) {
     res.status(500);
     res.send(error.message);
-    console.error(error);
   }
 };
 

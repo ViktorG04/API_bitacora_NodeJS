@@ -1,7 +1,7 @@
 import { Router } from 'express';
 
 import {
-    getPersons, getPersonById, getPersonsbyCompany, updatePersonById, getPersonByName, 
+    getPersons, getPersonById, getPersonsbyCompany, updatePersonById, getPeopleByCompany, 
     getValidateDui, updateStatePerson
 } from '../controllers/persons.controller';
 
@@ -26,6 +26,6 @@ router.put("/persons/state", updateStatePerson);
 router.post("/persons/validate/dui", getValidateDui);
 
 //search person by document
-router.post("/persons/validate/name", getPersonByName);
+router.get("/persons/search/:id", getPeopleByCompany);
 
 export default router;

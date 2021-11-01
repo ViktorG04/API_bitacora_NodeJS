@@ -3,7 +3,6 @@ export const querys = {
 
     listEEPS: 'EXEC listEEPS @A, @id',
     IUEntity: 'EXEC IUEntity @A, @id, @nm, @tp, @es',
-    getSearch:   'EXEC searchEP @A, @value',
     getEstate: 'EXEC CrupState @A, @id',
     getRol: 'EXEC CrupRol @A, @id, @var',
     getArea: 'EXEC CrupAreas @A, @id, @var, @es, @cap',

@@ -97,18 +97,30 @@ export const createNewSolicitudEmployee = async (req, res) => {
 
     var idU = parseInt(idUsuario);
     var idA = parseInt(idArea);
-    var idP, idS, fecha, idDetalle, nombre, idE, capacidad, resultFormulario;
+    var idP, idS, fecha, idDetalle, nombre, idE, capacidad, resultFormulario, validate, fechalike;
     idE = 3;
 
     if (isNaN(idU) || isNaN(idA) || fechayHoraVisita == "" || motivo == "" || sintomas == "" || covidFamiliar == "" || diagnosticado == "" || viajo == "" ) {
         return res.status(400).json({ msg: "Bad Request. Please fill all fields" });
     }
-
+    
     //validation and format date
     fecha = await fechSolicitud(fechayHoraVisita);
     if (fecha == '0-00-0000') {
-        return res.status(400).json({ msg: "Error with the time of solicitud" });
+        return res.status(400).json({ msg: "FECHA Y HORA NO PUEDEN SER MENORES A LA ACTUAL" });
     }
+
+    fechalike = fecha.split(" ");
+    fechalike = fechalike[0]+'%'
+   
+    //validation if exist one request created for an employee in date and time of required
+    validate = await insertUpdateSolicitud('C', idU,fechalike, '', '', '');
+    console.log(validate);
+    if(validate != 0){
+        return res.status(400).json({ msg: "NO PUEDE CREAR UNA SOLICITUD PARA LA FECHA SELECCIONADA"+
+        " YA TIENE UNA SOLICITUD CREADA" });
+    }
+
 
     //validate capacity of an office for that day
     capacidad = await disponibilidadOficina('I',fecha, idA,'4',1)
