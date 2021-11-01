@@ -71,30 +71,6 @@ export const updateCompanyById = async (req, res) => {
   }
 };
 
-//search company by name
-export const getCompanyByName = async (req, res) => {
-  const { nombre } = req.body;
-  const like = "%";
-  if (nombre == "") {
-    return res.status(400).json({ msg: "Bad Request. Please fill all field" });
-  }
-  var value = nombre + like;
-  try {
-    const connection = await getConnection();
-    const result = await connection
-      .request()
-      .input("A", "E")
-      .input("value", value)
-      .query(querys.getSearch);
-
-    res.json(result.recordset);
-
-  } catch (error) {
-    res.status(500);
-    res.send(error.message);
-  }
-};
-
 //add new company
 export const createNewCompany = async(nombre, idTipo) =>{
   const A = 'I';

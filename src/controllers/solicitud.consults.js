@@ -44,13 +44,14 @@ export const insertUpdateSolicitud = async (action, idUser, fecha, motivo, area,
             .input("area", area)
             .input("est", estado)
             .query(querys.postPutSolicitud);
-
         var msj
-        if (action != 'I') {
-            msj = "fields affected"
+        if (action == 'U') {
+            msj = "fields affected";
         }
-        else {
+        else if(action == 'I'){
             msj = result.recordset[0]["ID"];
+        }else{
+            msj = result.recordset[0]['total'];
         }
         return msj;
     } catch (error) {

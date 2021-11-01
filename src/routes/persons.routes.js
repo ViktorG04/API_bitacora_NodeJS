@@ -1,7 +1,11 @@
 import { Router } from 'express';
 
 import {
+<<<<<<< HEAD
     getPersons, getPersonById, getPersonsbyCompany, updatePersonById, getPersonByName, 
+=======
+    getPersons, getPersonById, getPersonsbyCompany, updatePersonById, getPeopleByCompany, 
+>>>>>>> develop
     getValidateDui, updateStatePerson
 } from '../controllers/persons.controller';
 

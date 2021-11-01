@@ -431,25 +431,6 @@ END
 GO
 
 GO
---- store procedure: searh persons and employee bye name ----
-CREATE PROCEDURE searchEP
-@action char(1),
-@var varchar(8)
-AS
-	IF(@action = 'P')
-	BEGIN
-		--Buscar Personas ---
-		SELECT idPersona, nombreCompleto, docIdentidad FROM personas WHERE idEstado = 1 AND nombreCompleto LIKE @var;
-	END
-	IF(@action = 'E')
-	BEGIN
-		--buscar empresas---
-		SELECT idEmpresa, nombre, empresa.idTipo, tipo FROM empresa INNER JOIN tipov ON empresa.idTipo = tipov.idTipo
-		WHERE idEstado = 1 AND nombre LIKE @var;
-	END
-GO
-
-GO
 CREATE PROCEDURE listEEPS
 @action char(3),
 @id int
@@ -620,6 +601,11 @@ AS
 		BEGIN
 			UPDATE solicitud SET fechayHoraVisita = @fech, motivo = @moti, idArea = @area
 			WHERE idSolicitud = @est
+		END
+		IF(@action = 'C')
+		BEGIN
+			SELECT COUNT(S.idSolicitud) AS total FROM solicitud AS S WHERE S.idUsuario=@user and 
+			CONVERT(VARCHAR(25), fechayHoraVisita, 126) LIKE @fech
 		END
 GO
 
