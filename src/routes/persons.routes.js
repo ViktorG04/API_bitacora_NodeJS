@@ -1,11 +1,7 @@
 import { Router } from 'express';
 
 import {
-<<<<<<< HEAD
-    getPersons, getPersonById, getPersonsbyCompany, updatePersonById, getPersonByName, 
-=======
     getPersons, getPersonById, getPersonsbyCompany, updatePersonById, getPeopleByCompany, 
->>>>>>> develop
     getValidateDui, updateStatePerson
 } from '../controllers/persons.controller';
 
@@ -16,6 +12,8 @@ router.get("/persons", getPersons);
 
 //all person by company
 router.get("/persons/byIdCompany/:id", getPersonsbyCompany);
+
+router.get("/persons/search/:id", getPeopleByCompany)
 
 //only one
 router.get("/persons/:id", getPersonById);
@@ -28,8 +26,5 @@ router.put("/persons/state", updateStatePerson);
 
 //validate doc identity
 router.post("/persons/validate/dui", getValidateDui);
-
-//search person by document
-router.post("/persons/validate/name", getPersonByName);
 
 export default router;

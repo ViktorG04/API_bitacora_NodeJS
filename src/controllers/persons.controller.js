@@ -172,7 +172,7 @@ export const getValidateDui = async (req, res) => {
 
 //search person by name
 export const getPeopleByCompany = async (req, res) => {
-  var id, result;
+  var id;
 
   id = parseInt(req.params.id);
 
