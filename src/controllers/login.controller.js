@@ -11,18 +11,19 @@ export const getUserLogin = async (req, res) => {
 
   result = await dataLogin(correo);
   if (result == null) {
-    return res.status(400).json({ msg: "Bad Request. wrong email" });
+    return res.status(400).json({ msg: "Bad Request. Email Incorrecto" });
   }
 
   validate = bcrypt.compareSync(password, result['pass']);
   if (validate != true) {
-    return res.status(400).json({ msg: "Bad Request. wrong password" });
+    return res.status(400).json({ msg: "Bad Request. Contraseña Incorrecta" });
   }
 
   if (result['estado'] != 1) {
-    return res.status(400).json({ msg: "Bad Request. User inactive" });
+    return res.status(400).json({ msg: "Bad Request. Usuario Inactivo" });
   }
   delete result.pass;
+  delete result.estado;
 
   res.json(result);
 

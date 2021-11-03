@@ -123,6 +123,50 @@ export const updateUserById = async (req, res) => {
   }
 };
 
+export const updatePasswordById = async (req, res) =>{
+  const {idUsuario, oldPassword, newPassword} = req.body;
+
+  var idU, resultUsuario, resultUpdate, comparar, pass;
+
+  idU = parseInt(idUsuario);
+
+  if(isNaN(idU) || oldPassword == "" || newPassword == ""){
+    return res.status(400).json({ msg: "Bad Request. Please fill all fields" });
+  }else if(oldPassword.length <8 || oldPassword.length > 12){
+    return res.status(400).json({ msg: "Bad Request. please password length between 8 and 12 chars" });
+  }else if(newPassword.length <8 || newPassword.length > 12){
+    return res.status(400).json({ msg: "Bad Request. please password length between 8 and 12 chars" });
+  }
+
+  resultUsuario = await ValidarCampo(idU, 'B');
+
+  if(resultUsuario == null){
+    return res.status(400).json({ msg: "Bad Request. Error! Usuario no existe" });
+  }
+
+  comparar = bcrypt.compareSync(oldPassword, resultUsuario['pass']);
+  if (comparar != true) {
+    return res.status(400).json({ msg: "Bad Request. La contraseña Actual no es la correcta" });
+  }
+
+  comparar = bcrypt.compareSync(newPassword, resultUsuario['pass']);
+  if( comparar != false){
+    return res.status(400).json({ msg: "Bad Request. La nueva contraseña no puede ser igual a la actual" });
+  }
+
+  //password encrypt
+  pass = bcrypt.hashSync(newPassword, 8);
+
+  resultUpdate = await IUEmployee(idU, 'P', '', '', pass, '', '', '', '', '');
+
+  if(resultUpdate == null){
+    return res.status(400).json({ msg: "Bad Request. Error al actualizar la contraseña" });
+  }
+
+  res.json(resultUpdate);
+
+}
+
 
 //validate doc identity and email
 async function ValidarCampo(valor, Action) {

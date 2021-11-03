@@ -28,8 +28,6 @@ export const getSolicitudes = async (req, res) => {
             }
             else if (allSolicitudes[i]['estado'] == "Aprobado") {
             }
-            else if (allSolicitudes[i]['estado'] == "Finalizado") {
-            }
             else {
                 delete allSolicitudes[i];
             }

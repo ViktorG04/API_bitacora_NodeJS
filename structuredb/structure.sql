@@ -417,6 +417,10 @@ AS
 		--Actualizar Personas ---
 		UPDATE personas SET nombreCompleto = @nom, docIdentidad = @doc, idEmpresa = @emp WHERE idPersona = @id;
 	END
+	IF(@action = 'P')
+	BEGIN
+		UPDATE usuario SET pass = @pass WHERE idUsuario= @id;
+	END
 GO
 
 GO
@@ -470,6 +474,7 @@ AS
 	IF(@action = 'LEB')
 	BEGIN
 		SELECT P.idEmpleado, P.nombreCompleto FROM usuario AS U INNER JOIN personas AS P ON P.idEmpleado = U.idUsuario
+		WHERE idEstado = 1;
 	END
     IF(@action = 'LEI')
 	BEGIN
@@ -495,11 +500,12 @@ AS
 	END
 	IF(@rol = 1 OR @rol = 3)
 	BEGIN
-		SELECT S.idSolicitud, P.nombreCompleto, FORMAT(S.fechayHoraVisita,'dd/MM/yyyy hh:mm tt') AS fechaVisita, S.idEstado, 
-		E.estado, motivo, idArea FROM solicitud AS S
+		SELECT TOP 20 S.idSolicitud, P.nombreCompleto, FORMAT(S.fechayHoraVisita,'dd/MM/yyyy hh:mm tt') AS fechaVisita,
+		S.idEstado, E.estado, motivo, idArea FROM solicitud AS S
 		INNER JOIN estado AS E ON S.idEstado = E.idEstado
 		INNER JOIN usuario AS U ON S.idUsuario = U.idUsuario
 		INNER JOIN personas AS P ON U.idUsuario = P.idPersona
+		WHERE S.idEstado != 7
 		ORDER BY idSolicitud DESC;
 	END
 GO
