@@ -1,4 +1,3 @@
-
 use bitacora;
 
 IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[rol]') AND type in (N'U'))
@@ -379,11 +378,20 @@ CREATE PROCEDURE IUUsers
 AS
 	IF(@action = 'I')
 	BEGIN
+		DECLARE @SrcOffset INT
+		DECLARE @DstOffset INT
+		DECLARE @Now       DATETIME
+		DECLARE @newDate   DATETIME
+		SELECT  @SrcOffset = DATEPART(TZ,SYSDATETIMEOFFSET()),
+			@DstOffset = -360, --utc -6 time zone El Salvador
+			@Now       = GETDATE()  
+		SELECT @newDate =  DATEADD(MINUTE, @DstOffset - @SrcOffset, @Now)
+
 		-----Insert user ----
 		INSERT INTO usuario(usuario, correo, pass, idRol) VALUES(@user, @corr, @pass, @rol);
 
 		INSERT INTO personas(nombreCompleto, docIdentidad, idEmpresa, idEmpleado, idEstado, fechayHoraCreacion) 
-		VALUES( @nom, @doc, @emp, (SELECT @@IDENTITY as ID), @est, GETDATE());
+		VALUES( @nom, @doc, @emp, (SELECT @@IDENTITY as ID), @est, @newDate);
 	END
 	IF(@action = 'U')
 	BEGIN
@@ -392,6 +400,10 @@ AS
 
 		---update table persons----
 		UPDATE personas SET nombreCompleto = @nom, docIdentidad = @doc WHERE idEmpleado = @id;
+	END
+	IF(@action = 'P')
+	BEGIN
+		UPDATE usuario SET pass = @pass WHERE idUsuario= @id;
 	END
 GO
 
@@ -407,19 +419,24 @@ CREATE PROCEDURE IUPersons
 AS
 	IF(@action = 'I')
 	BEGIN
+		DECLARE @SrcOffset INT
+		DECLARE @DstOffset INT
+		DECLARE @Now       DATETIME
+		DECLARE @newDate   DATETIME
+		SELECT  @SrcOffset = DATEPART(TZ,SYSDATETIMEOFFSET()),
+			@DstOffset = -360, --utc -6 time zone El Salvador
+			@Now       = GETDATE()  
+		SELECT @newDate =  DATEADD(MINUTE, @DstOffset - @SrcOffset, @Now)
+
 		----insertar personas ---
 		INSERT INTO personas(nombreCompleto, docIdentidad, idEmpresa, idEstado, fechayHoraCreacion) 
-		VALUES( @nom, @doc, @emp, @est, GETDATE());
+		VALUES( @nom, @doc, @emp, @est, @newDate);
 		SELECT @@IDENTITY as ID;
 	END
 	IF(@action = 'U')
 	BEGIN
 		--Actualizar Personas ---
 		UPDATE personas SET nombreCompleto = @nom, docIdentidad = @doc, idEmpresa = @emp WHERE idPersona = @id;
-	END
-	IF(@action = 'P')
-	BEGIN
-		UPDATE usuario SET pass = @pass WHERE idUsuario= @id;
 	END
 GO
 
@@ -518,9 +535,9 @@ AS
 	IF(@action = 'BS')
 	BEGIN
 		---search solicitud---
-		SELECT S.idSolicitud, U.idUsuario, P.nombreCompleto, FORMAT(S.fechayHoraVisita,'dd/MM/yyyy hh:mm tt') AS fechaVisita, S.motivo, A.descripcion AS Area, S.idEstado, E.estado FROM solicitud AS S
+		SELECT S.idSolicitud, U.idUsuario, P.nombreCompleto, FORMAT(S.fechayHoraVisita,'dd/MM/yyyy hh:mm tt') AS fechaVisita, 
+		S.motivo, S.idArea, S.idEstado, E.estado FROM solicitud AS S
 		INNER JOIN estado AS E ON S.idEstado = E.idEstado
-		INNER JOIN areas AS A ON S.idArea = A.idArea
 		INNER JOIN usuario AS U ON U.idUsuario = S.idUsuario 
 		INNER JOIN personas AS P ON U.idUsuario = P.idEmpleado
 		WHERE S.idSolicitud =  @id;
@@ -564,7 +581,16 @@ AS
 	END
 	IF(@action = 'TI')
 	BEGIN
-		SELECT FORMAT(GETDATE(), 'dd/MM/yyyy HH:mm') AS fecha;
+		DECLARE @SrcOffset INT
+		DECLARE @DstOffset INT
+		DECLARE @Now       DATETIME
+		DECLARE @newDate   DATETIME
+		SELECT  @SrcOffset = DATEPART(TZ,SYSDATETIMEOFFSET()),
+			@DstOffset = -360, --utc -6 time zone El Salvador
+			@Now       = GETDATE()  
+		SELECT @newDate =  DATEADD(MINUTE, @DstOffset - @SrcOffset, @Now)
+
+		SELECT FORMAT(@newDate, 'dd/MM/yyyy HH:mm') AS fecha;
 	END
 GO
 
@@ -579,8 +605,18 @@ AS
 	IF(@est = 7)
 	BEGIN
 		---update detalleIngreso---
+		DECLARE @SrcOffset INT
+		DECLARE @DstOffset INT
+		DECLARE @Now       DATETIME
+		DECLARE @newDate   DATETIME
+		SELECT  @SrcOffset = DATEPART(TZ,SYSDATETIMEOFFSET()),
+			@DstOffset = -360, --utc -6 time zone El Salvador
+		 @Now       = GETDATE()  
+
+		SELECT @newDate =  DATEADD(MINUTE, @DstOffset - @SrcOffset, @Now)
+
 		----cuando el estado de la solicitud cambie a finalizado se tendra que actualizar el campo fechasalida
-		UPDATE DTI SET DTI.fechaHoraSalida = GETDATE()
+		UPDATE DTI SET DTI.fechaHoraSalida = @newDate
 		FROM detalleingreso AS DTI INNER JOIN detallesolicitud AS DTS
 		ON DTI.idDetalle = DTS.idDetalle
 		WHERE DTS.idSolicituDe = @id; 
@@ -598,9 +634,18 @@ CREATE PROCEDURE ISolicitud
 AS
 	IF(@action = 'I')
 		BEGIN
+			DECLARE @SrcOffset INT
+			DECLARE @DstOffset INT
+			DECLARE @Now       DATETIME
+			DECLARE @newDate   DATETIME
+			SELECT  @SrcOffset = DATEPART(TZ,SYSDATETIMEOFFSET()),
+				@DstOffset = -360, --utc -6 time zone El Salvador
+				@Now       = GETDATE()  
+			SELECT @newDate =  DATEADD(MINUTE, @DstOffset - @SrcOffset, @Now)
+
 			---insert solicitud---
 			INSERT INTO solicitud(idUsuario, fechaCreacion, fechayHoraVisita, motivo, idEstado, idArea)
-			VALUES (@user, GETDATE(), @fech, @moti, @est, @area);
+			VALUES (@user, @newDate, @fech, @moti, @est, @area);
 			SELECT @@IDENTITY as ID;
 		END
 		IF(@action = 'U')
@@ -634,9 +679,19 @@ CREATE PROCEDURE IIngreso
 @detSo int
 AS
 BEGIN
+	DECLARE @SrcOffset INT
+	DECLARE @DstOffset INT
+	DECLARE @Now       DATETIME
+	DECLARE @newDate   DATETIME
+	SELECT  @SrcOffset = DATEPART(TZ,SYSDATETIMEOFFSET()),
+        @DstOffset = -360, --utc -6 time zone El Salvador
+        @Now       = GETDATE()  
+
+	SELECT @newDate =  DATEADD(MINUTE, @DstOffset - @SrcOffset, @Now)
+
 	---insert detalleIngreso---
 	INSERT INTO detalleingreso(fechaHoraIngreso, temperatura, idDetalle)
-	VALUES (GETDATE(),@temp, @detSo);
+	VALUES (@newDate,@temp, @detSo);
 END
 GO
 

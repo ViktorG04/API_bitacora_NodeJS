@@ -18,7 +18,6 @@ router.post("/solicitudes/empleado", createNewSolicitudEmployee);
 
 //insert solicitud for all people
 router.post("/solicitudes/visitas", createNewSolicitudVisitas);
-export default router;
 
 //insert detalleSolicitud
 router.post("/solicitudes/ingreso", createDetalleIngreso);
@@ -28,3 +27,6 @@ router.put("/solicitudes/estado", updateStateSolicitud);
 
 //update all data
 router.put("/solicitudes", updateValuesSolicitud);
+
+
+export default router;
