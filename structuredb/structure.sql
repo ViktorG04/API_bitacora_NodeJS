@@ -802,7 +802,8 @@ GO
 
 GO
 CREATE PROCEDURE reportes
-@action char(2)
+@action char(2),
+@fechaI varchar(12)
 AS
 	IF(@action = 'LT')
 	BEGIN
@@ -823,5 +824,15 @@ AS
 		INNER JOIN empresa AS E ON P.idEmpresa = E.idEmpresa
 		INNER JOIN detalleingreso AS DSI ON DSI.idDetalle = DTS.idDetalle
 		INNER JOIN solicitud AS S ON S.idSolicitud = DTS.idSolicituDe Order by S.idSolicitud DESC
+	END
+	IF(@action = 'SF')
+	BEGIN
+		SELECT S.idSolicitud, P.nombreCompleto, FORMAT(S.fechayHoraVisita,'dd/MM/yyyy hh:mm tt') AS fechaVisita,
+		S.idEstado, E.estado, motivo, idArea FROM solicitud AS S
+		INNER JOIN estado AS E ON S.idEstado = E.idEstado
+		INNER JOIN usuario AS U ON S.idUsuario = U.idUsuario
+		INNER JOIN personas AS P ON U.idUsuario = P.idPersona
+		WHERE CONVERT(VARCHAR(25), S.fechayHoraVisita, 126) LIKE @fechaI
+		ORDER BY idSolicitud DESC;
 	END
 GO
