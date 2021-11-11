@@ -57,8 +57,9 @@ export const nexepidemiologicos = async (req, res) => {
 
     const id = req.params.id;
 
-    var restIncapacidad, result15days, idP, person, fecha;
+    var restIncapacidad, result15days, idP, fecha;
     var nexos = [];
+    var person = [];
 
     restIncapacidad = await crupIncapacidad('N',id, '', '', '', '');
 
@@ -72,22 +73,25 @@ export const nexepidemiologicos = async (req, res) => {
     }
     idP = idP['idPersona'];
     fecha = await fechFormat(restIncapacidad[0]['fecha'])
-
+    
     //entry of people after 15 days
     result15days = await getNextEpidemiological(fecha);
+    
     for (const i in result15days) {
-
         if (result15days[i]['idPersona'] == idP) {
-           
-            person = result15days[i];
+            person.push(result15days[i]);
         }
-        if (result15days[i]['Area'] == person['Area'] & result15days[i]['fecha'] == person['fecha']) {
-            nexos.push(result15days[i]);
+    }
+
+    for(const i in result15days){
+        for(const x in person){
+            if (result15days[i]['Area'] == person[x]['Area'] & result15days[i]['fecha'] == person[x]['fecha']) {
+                nexos.push(result15days[i]);
+            }
         }
     }
 
     res.json(nexos);
-
 };
 
 
