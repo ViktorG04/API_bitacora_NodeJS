@@ -24,5 +24,5 @@ export const querys = {
     IIncapacidad: 'EXEC IIncapacidad @A, @numI, @emp, @fechI, @fechF, @mot',
     crupFormulario: 'EXEC crupFormulario @A, @detaS, @pre, @res',
     getNexEpidemiological: ' EXEC listPeople15days @fech',
-    getReportes: 'EXEC reportes @A, @fechaI',
+    getReportes: 'EXEC reportes @A, @fechaI, @fechaF, @area',
 };

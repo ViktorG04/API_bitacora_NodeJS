@@ -802,10 +802,12 @@ GO
 
 GO
 CREATE PROCEDURE reportes
-@action char(2),
-@fechaI varchar(12)
+@action char(3),
+@fechaI varchar(12),
+@fechaF varchar(12),
+@area int
 AS
-	IF(@action = 'LT')
+	IF(@action = 'LTS')
 	BEGIN
 		SELECT S.idSolicitud, DS.idDetalle, P.nombreCompleto, P.docIdentidad, E.nombre AS empresa, 
 		A.descripcion as oficina, S.idEstado
@@ -815,7 +817,7 @@ AS
 		INNER JOIN empresa AS E ON E.idEmpresa = P.idEmpresa
 		INNER JOIN areas AS A ON A.idArea = S.idArea ORDER BY S.idSolicitud DESC;
 	END
-	IF(@action = 'LS')
+	IF(@action = 'LSS')
 	BEGIN
 		SELECT S.idSolicitud, DSI.idDetalle, DSI.temperatura,
 		FORMAT(DSI.fechaHoraIngreso, 'dd/MM/yyyy hh:mm tt') AS fechaHoraIngreso, 
@@ -825,7 +827,7 @@ AS
 		INNER JOIN detalleingreso AS DSI ON DSI.idDetalle = DTS.idDetalle
 		INNER JOIN solicitud AS S ON S.idSolicitud = DTS.idSolicituDe Order by S.idSolicitud DESC
 	END
-	IF(@action = 'SF')
+	IF(@action = 'BSF')
 	BEGIN
 		SELECT S.idSolicitud, P.nombreCompleto, FORMAT(S.fechayHoraVisita,'dd/MM/yyyy hh:mm tt') AS fechaVisita,
 		S.idEstado, E.estado, motivo, idArea FROM solicitud AS S
@@ -834,5 +836,25 @@ AS
 		INNER JOIN personas AS P ON U.idUsuario = P.idPersona
 		WHERE CONVERT(VARCHAR(25), S.fechayHoraVisita, 126) LIKE @fechaI
 		ORDER BY idSolicitud DESC;
+	END
+	IF(@action = 'LSF')
+	BEGIN
+		SELECT S.idSolicitud, DSI.idDetalle, DSI.temperatura,
+		FORMAT(DSI.fechaHoraIngreso, 'dd/MM/yyyy hh:mm tt') AS fechaHoraIngreso, 
+		FORMAT(DSI.fechaHoraSalida, 'dd/MM/yyyy hh:mm tt') AS fechaHoraSalida FROM detallesolicitud AS DTS
+		INNER JOIN personas AS P ON DTS.idVisitante = P.idPersona
+		INNER JOIN empresa AS E ON P.idEmpresa = E.idEmpresa
+		INNER JOIN detalleingreso AS DSI ON DSI.idDetalle = DTS.idDetalle
+		INNER JOIN solicitud AS S ON S.idSolicitud = DTS.idSolicituDe WHERE DSI.fechaHoraIngreso BETWEEN @fechaI AND @fechaF Order by S.idSolicitud DESC
+	END
+	IF(@action = 'LSA')
+	BEGIN
+		SELECT S.idSolicitud, DS.idDetalle, P.nombreCompleto, P.docIdentidad, E.nombre AS empresa, 
+		A.descripcion as oficina, S.idEstado
+		FROM solicitud AS S 
+		INNER JOIN detallesolicitud AS DS ON S.idSolicitud = DS.idSolicituDe
+		INNER JOIN personas AS P ON P.idPersona = DS.idVisitante
+		INNER JOIN empresa AS E ON E.idEmpresa = P.idEmpresa
+		INNER JOIN areas AS A ON A.idArea = S.idArea WHERE A.idArea = @area ORDER BY S.idSolicitud DESC;
 	END
 GO
