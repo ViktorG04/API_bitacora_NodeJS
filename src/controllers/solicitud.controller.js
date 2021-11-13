@@ -101,7 +101,6 @@ export const createNewSolicitudEmployee = async (req, res) => {
     if (isNaN(idU) || isNaN(idA) || fechayHoraVisita == "" || motivo == "" || sintomas == "" || covidFamiliar == "" || diagnosticado == "" || viajo == "" ) {
         return res.status(400).json({ msg: "Bad Request. Please fill all fields" });
     }
-    
     //validation and format date
     fecha = await fechSolicitud(fechayHoraVisita);
     if (fecha == '0-00-0000') {
@@ -110,10 +109,8 @@ export const createNewSolicitudEmployee = async (req, res) => {
 
     fechalike = fecha.split(" ");
     fechalike = fechalike[0]+'%'
-   
     //validation if exist one request created for an employee in date and time of required
-    validate = await insertUpdateSolicitud('C', idU,fechalike, '', '', '');
-    console.log(validate);
+    validate = await insertUpdateSolicitud('C', idU,'',fechalike, '', '');
     if(validate != 0){
         return res.status(400).json({ msg: "NO PUEDE CREAR UNA SOLICITUD PARA LA FECHA SELECCIONADA"+
         " YA TIENE UNA SOLICITUD CREADA" });

@@ -656,7 +656,7 @@ AS
 		IF(@action = 'C')
 		BEGIN
 			SELECT COUNT(S.idSolicitud) AS total FROM solicitud AS S WHERE S.idUsuario=@user and 
-			CONVERT(VARCHAR(25), fechayHoraVisita, 126) LIKE @fech
+			CONVERT(VARCHAR(25), fechayHoraVisita, 126) LIKE @moti
 		END
 GO
 
