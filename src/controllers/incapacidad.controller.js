@@ -57,11 +57,14 @@ export const nexepidemiologicos = async (req, res) => {
 
     const id = req.params.id;
 
-    var restIncapacidad, result15days, idP, fecha;
+    var idEmployee, restIncapacidad, result15days, idP, fecha;
     var nexos = [];
     var person = [];
 
-    restIncapacidad = await crupIncapacidad('N',id, '', '', '', '');
+    idEmployee = await detalleEmployee(id, 'B');
+
+
+    restIncapacidad = await crupIncapacidad('N',idEmployee['idEmpleado'], '', '', '', '');
 
     if(restIncapacidad.length == 0){
         return res.status(400).json({ msg: "Bad Request. Error! id incapacidad incorrecto" });

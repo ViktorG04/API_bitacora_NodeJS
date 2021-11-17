@@ -18,6 +18,11 @@ export const getSolicitudes = async (req, res) => {
     var id = req.params.id;
     var allSolicitudes, idR, solicitudes;
     idR = await detalleEmployee(id, 'R');
+
+    if(idR === undefined){
+        return res.status(400).json({ msg: "Error de comunicacion con el servidor de datos" });
+    }
+
     idR = idR['idRol'];
     allSolicitudes = await listSolicitudes(id, idR);
 
