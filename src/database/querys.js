@@ -25,4 +25,5 @@ export const querys = {
     crupFormulario: 'EXEC crupFormulario @A, @detaS, @pre, @res',
     getNexEpidemiological: ' EXEC listPeople15days @fech',
     getReportes: 'EXEC reportes @A, @fechaI, @fechaF, @area',
+    crupLogicApp: 'EXEC LogicApp @A, @co, @status, @fech, @email, @hots, @method',
 };

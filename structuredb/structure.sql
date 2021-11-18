@@ -149,6 +149,18 @@ fechaFin date not null,
 primary key(idIncapacidad),
 foreign key(idEmpleado) references usuario(idUsuario));
 
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[mensajes]') AND type in (N'U'))
+DROP TABLE [dbo].[mensajes]
+
+create table mensajes(
+idMensaje int not null IDENTITY(1,1),
+codigo int not null,
+codStatus varchar(20) not null,
+fecha datetime not null,
+email varchar(40) not null,
+servidor varchar(60) not null,
+metodo varchar(10) not null
+primary key(idMensaje));
 
 GO
 
@@ -856,5 +868,26 @@ AS
 		INNER JOIN personas AS P ON P.idPersona = DS.idVisitante
 		INNER JOIN empresa AS E ON E.idEmpresa = P.idEmpresa
 		INNER JOIN areas AS A ON A.idArea = S.idArea WHERE A.idArea = @area ORDER BY S.idSolicitud DESC;
+	END
+GO
+
+GO
+CREATE PROCEDURE LogicApp
+@action char(1),
+@codi int,
+@status varchar(20),
+@fech datetime,
+@email varchar(40),
+@serve varchar(60),
+@metodo varchar(10)
+AS
+	IF(@action = 'I')
+	BEGIN
+		INSERT INTO mensajes(codigo, codStatus, fecha, email, servidor, metodo)
+		VALUES (@codi, @status, @fech, @email, @serve, @metodo)
+	END
+	IF(@action = 'L')
+	BEGIN
+		SELECT * FROM mensajes
 	END
 GO
