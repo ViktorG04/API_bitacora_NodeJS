@@ -512,7 +512,7 @@ AS
 	END
 	IF(@action = 'BPE')
 	BEGIN
-		SELECT idPersona, nombreCompleto, docIdentidad FROM personas WHERE idEstado = 1 AND idEmpresa = @id;
+		SELECT idPersona, nombreCompleto AS nombre, docIdentidad AS dui FROM personas WHERE idEstado = 1 AND idEmpresa = @id;
 	END
 GO
 
